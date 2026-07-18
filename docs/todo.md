@@ -5,25 +5,26 @@ notes to pick up later.
 
 ## Graph view (`/graph`)
 
-The first version works but is rough. Ideas noted while using it:
+Reworked around hubs (spec §8a): collapsed overview, click to expand, drag to pin,
+search to reveal. Measured on a ~360-bookmark library: 17 hub circles at rest, no
+overlapping nodes even fully expanded, ~120ms to open a mid-size hub and ~310ms to
+open the largest (142 bookmarks).
 
-- [ ] **Density / readability.** Clusters still land unevenly; large tag hubs pull
-      everything toward them. Consider a stronger cluster separation force, or
-      laying out each connected component separately and packing the components.
-- [ ] **Threshold control.** `minShared` is hard-coded to 2 in `buildGraph`. Expose it
-      as a slider so you can see the graph get denser/sparser live.
-- [ ] **Filtering.** Reuse the list view's search/tag/collection filters to scope the
-      graph, instead of always rendering everything.
-- [ ] **Legend + colors.** No legend today; node colors (blue = tag, green = collection)
-      are undocumented in the UI. Possibly color bookmarks by their collection.
-- [ ] **Singleton handling.** Bookmarks with no shared tag/collection float as lone
-      nodes and eat space. Options: hide them behind a toggle, or park them in a
-      "unconnected" gutter.
-- [ ] **Labels.** Long titles are truncated by the fixed card width; no tooltip on hover.
-- [ ] **Interaction.** Clicking a tag/collection hub could filter the list view.
-      Hovering a node could dim everything not connected to it.
-- [ ] **Perf.** Layout is a synchronous `tick(300)` on every page load. Fine at current
-      size; will need a web worker or cached positions if the collection grows a lot.
+Remaining ideas:
+
+- [ ] **Opening a very large hub is still a lot of labels.** 142 bookmarks around one
+      circle is legible but dense. Could paginate ("show 30 more"), or cluster by
+      domain within a hub.
+- [ ] **Relayout cost grows with what's open** — ~450ms per expansion once most of the
+      library is showing. Only matters if you expand everything; a web worker or
+      incremental layout would fix it if it becomes annoying.
+- [ ] **`minShared` is fixed at 2.** Expose it as a control to make the map sparser or
+      denser.
+- [ ] **Tag hubs are unproven in practice** — a library imported from Chrome has no
+      tags, so the graph is collection-only until tags get used. Revisit the layout
+      balance once tags are in play.
+- [ ] Hovering a node could dim everything not connected to it.
+- [ ] Clicking a hub could also filter the list view.
 
 ## Duplicates
 

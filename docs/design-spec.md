@@ -205,20 +205,35 @@ with a format-preserving approach.
 
 ### 8a. Graph / map view — DECIDED
 
-A second view (toggle **List / Graph** in the header, routed at `/graph`) shows
-bookmarks as a force-directed "map" of how they group together.
+A second view (toggle **List / Graph** in the header, routed at `/graph`) showing how
+bookmarks group together. It serves two uses at once, which drives the design:
+an **overview** ("what is the shape of my library?") and **navigation** ("find and
+open something").
 
-- **Model: hub nodes.** Rather than drawing an edge between every pair of bookmarks
-  that share something (which explodes for popular tags), tags and collections become
-  their own small nodes; each bookmark links to the tags/collections it belongs to.
-  Only hubs shared by **≥ 2 bookmarks** are shown, so the graph reflects real
-  groupings; bookmarks with no shared attribute appear as lone nodes.
-- **Rendering:** [`@xyflow/svelte`](https://svelte.flow) (Svelte Flow) for the canvas +
-  interactions; **d3-force** computes a settled layout (link/charge/center/collide +
-  mild centering) that Svelte Flow then renders. Dark theme, attribution hidden.
-- **Node types:** bookmark (favicon + title card, click opens the URL), tag (blue pill),
-  collection (green folder pill). Hub size hints at how many bookmarks it holds.
-- **Interactions:** pan & zoom; click a bookmark to open it. Node dragging is off.
+- **Hubs are the primary objects.** Collections and tags are drawn as circles sized by
+  how many bookmarks they hold; bookmarks themselves stay hidden until asked for.
+  Drawing every bookmark at once is a wall of labels rather than a map — measured at a
+  few hundred bookmarks, it fills the canvas with near-identical cards.
+- **Click a hub to open it**, revealing the bookmarks inside; click again to collapse.
+  This is what makes the two uses coexist: collapsed is the overview, opened is
+  navigation. "Collapse all" returns to the overview.
+- **Collection hubs nest.** `Dev/Frameworks` hangs off `Dev`, and a parent's count
+  includes everything beneath it, so the folder hierarchy is visible as structure
+  rather than as a set of unrelated islands. Tags stay flat — being flat is precisely
+  what lets them cut across collections.
+- **Search reveals in place.** Typing in the graph's search box surfaces matching
+  bookmarks wherever they live, without expanding their hubs, so you can see _where_
+  in the library the matches are.
+- **Everything is draggable, and stays where it is put.** A dragged node is pinned:
+  later relayouts treat it as an anchor. Nodes already on screen keep their positions
+  when a hub opens, so the map grows outward instead of rearranging under you.
+- **Bookmarks with no collection** are grouped under a single `Unfiled` hub rather than
+  scattered loose.
+- **Rendering:** [`@xyflow/svelte`](https://svelte.flow) for the canvas, **d3-force**
+  for a settled layout (link/charge/center/collide + mild centering). Collision radii
+  are half the widest a node can get, so cards cannot overlap sideways; the tick count
+  scales with node count, because a graph seeded from previous positions starts
+  cramped and needs more settling than a fresh one.
 - **Pure/testable core:** `$lib/graph.ts` (`buildGraph`) and `$lib/graphLayout.ts`
   (`layoutGraph`) are framework-free; `buildGraph` is unit-tested.
 

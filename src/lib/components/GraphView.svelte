@@ -1,54 +1,83 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { SvelteFlow, Background, Controls, type Node, type Edge } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
 	import type { Bookmark } from '$lib/types';
 	import { buildGraph } from '$lib/graph';
-	import { layoutGraph } from '$lib/graphLayout';
+	import { layoutGraph, type Point } from '$lib/graphLayout';
 	import BookmarkNode from './nodes/BookmarkNode.svelte';
-	import TagNode from './nodes/TagNode.svelte';
-	import CollectionNode from './nodes/CollectionNode.svelte';
+	import HubNode from './nodes/HubNode.svelte';
+	import GraphLegend from './GraphLegend.svelte';
 
-	let { bookmarks }: { bookmarks: Bookmark[] } = $props();
+	let { bookmarks, search = '' }: { bookmarks: Bookmark[]; search?: string } = $props();
 
-	const nodeTypes = { bookmark: BookmarkNode, tag: TagNode, collection: CollectionNode };
+	const nodeTypes = { bookmark: BookmarkNode, tag: HubNode, collection: HubNode };
 
-	function build(list: Bookmark[]): { nodes: Node[]; edges: Edge[] } {
-		const graph = buildGraph(list);
-		const positions = layoutGraph(graph);
-		const nodes: Node[] = graph.nodes.map((n) => ({
-			id: n.id,
-			type: n.kind,
-			position: positions.get(n.id) ?? { x: 0, y: 0 },
-			data: { label: n.label, url: n.url, favicon: n.favicon, degree: n.degree }
+	/** Hubs the user has opened. Everything starts collapsed: the map is the overview. */
+	let expanded = $state(new SvelteSet<string>());
+	/** Where the user dragged things; these positions survive every relayout. */
+	let pinned = new Map<string, Point>();
+	/** Last computed positions, so opening a hub grows the map instead of reshuffling it. */
+	let positions = new Map<string, Point>();
+
+	let nodes = $state.raw<Node[]>([]);
+	let edges = $state.raw<Edge[]>([]);
+
+	// Re-render whenever the bookmarks, the open hubs, or the search change.
+	$effect(() => {
+		const graph = buildGraph(bookmarks, { expanded, search });
+		positions = layoutGraph(graph, { previous: positions, pinned });
+
+		nodes = graph.nodes.map((node) => ({
+			id: node.id,
+			type: node.kind,
+			position: positions.get(node.id) ?? { x: 0, y: 0 },
+			data: { ...node }
 		}));
-		const edges: Edge[] = graph.edges.map((e) => ({
-			id: e.id,
-			source: e.source,
-			target: e.target
+		edges = graph.edges.map((edge) => ({
+			id: edge.id,
+			source: edge.source,
+			target: edge.target
 		}));
-		return { nodes, edges };
+	});
+
+	/** Clicking a hub shows or hides the bookmarks it holds. Bookmarks are links. */
+	function toggleHub({ node }: { node: Node }) {
+		if (node.type === 'bookmark') return;
+		if (expanded.has(node.id)) expanded.delete(node.id);
+		else expanded.add(node.id);
 	}
 
-	// The graph is a one-time snapshot of the loaded bookmarks (fresh per navigation).
-	const initial = untrack(() => build(bookmarks));
-	let nodes = $state.raw<Node[]>(initial.nodes);
-	let edges = $state.raw<Edge[]>(initial.edges);
+	/** Remember where a node was dropped, so later relayouts leave it where you put it. */
+	function pinNode({ targetNode }: { targetNode: Node | null }) {
+		if (!targetNode) return;
+		pinned.set(targetNode.id, { ...targetNode.position });
+		positions.set(targetNode.id, { ...targetNode.position });
+	}
+
+	function collapseAll() {
+		expanded = new SvelteSet<string>();
+		pinned = new Map();
+		positions = new Map();
+	}
 </script>
 
-<div class="h-full w-full">
+<div class="relative h-full w-full">
 	<SvelteFlow
 		bind:nodes
 		bind:edges
 		{nodeTypes}
 		fitView
 		colorMode="dark"
-		nodesDraggable={false}
+		minZoom={0.1}
 		nodesConnectable={false}
-		elementsSelectable={false}
+		onnodeclick={toggleHub}
+		onnodedragstop={pinNode}
 		proOptions={{ hideAttribution: true }}
 	>
 		<Background />
 		<Controls />
 	</SvelteFlow>
+
+	<GraphLegend openCount={expanded.size} oncollapseAll={collapseAll} />
 </div>
