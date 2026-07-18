@@ -10,21 +10,22 @@ over-engineering a single-user local app.
 
 # Round 2 — after the graph, import/export and dedupe features
 
-**Status:** 🏗️ in progress. Review covered 3,135 lines across 45 files.
+**Status:** ✅ Complete (2026-07-19). Review covered 3,135 lines across 45 files.
+`check` (0 errors) + `test` (124 passing, up from 87) + `build` green.
 
 Three features landed after Round 1, and each added its own duplication. Two findings
 are behavioral defects rather than style, so they come first and separately.
 
 ## Phase 0 — Defects (behavior changes; commit on their own)
 
-- [ ] **Nested collections flatten on export** (`import/netscape.ts`). A bookmark in
+- [x] **Nested collections flatten on export** (`import/netscape.ts`). A bookmark in
       `Dev/Frameworks` exports as a single folder literally named `Dev/Frameworks`,
       rather than `Frameworks` nested inside `Dev`. Chrome shows a slash in the folder
       name. It survives our own re-import (we re-join on `/`), which is why the existing
       round-trip test passes — the test only checks our side.
       _Fix:_ build a folder tree in `serializeNetscape` and emit real nesting; add a test
       asserting `<H3>Dev</H3>` containing `<H3>Frameworks</H3>`.
-- [ ] **Chrome profile file read three times per `/import` load**
+- [x] **Chrome profile file read three times per `/import` load**
       (`server/chromeProfile.ts` + `routes/import/+page.server.ts`). `hasBookmarks`
       reads the whole file just to test existence, `countLinks` reads it again, and the
       page `load` reads it a third time for `chromeFolders` — parsing the JSON twice.
@@ -34,43 +35,57 @@ are behavioral defects rather than style, so they come first and separately.
 
 ## Phase 1 — DRY
 
-- [ ] **`parseTags` duplicated verbatim** in `routes/+page.server.ts` and
+- [x] **`parseTags` duplicated verbatim** in `routes/+page.server.ts` and
       `routes/import/+page.server.ts`; `parseTagAttr` in `import/netscape.ts` is a third
       variant of the same idea. → one `splitList` helper in `$lib/tags.ts`.
-- [ ] **Button class strings duplicated** — the primary button in `AddBar`, `EditDialog`
+- [x] **Button class strings duplicated** — the primary button in `AddBar`, `EditDialog`
       and `routes/import/+page.svelte`; the ghost button in ~4 places. `ui.ts` already
       exists for this and currently covers only inputs. → add `primaryButton`,
       `ghostButton`, `cardClass`.
-- [ ] **Bookmark construction duplicated** between `addBookmark` and `addBookmarks`
+- [x] **Bookmark construction duplicated** between `addBookmark` and `addBookmarks`
       (same 8-line literal, differing only in the `added` fallback). → one
       `buildBookmark(input, fields)` factory.
 - [ ] **Two epoch converters** — `isoFromAddDate` (Unix seconds) and `isoFromChromeTime`
-      (WebKit microseconds). → `$lib/import/time.ts` with both, named by their unit.
+      (WebKit microseconds). _Skipped after a closer look; see "Deliberately NOT doing"._
 
 ## Phase 2 — SLAP / structure
 
-- [ ] **Repository error strategy is inconsistent.** `addBookmark` throws for a missing
+- [x] **Repository error strategy is inconsistent.** `addBookmark` throws for a missing
       URL but returns a result object for duplicates; `updateBookmark` throws. Only the
       `update` action wraps in `try`/`catch`, so the five actions handle failure five
       ways. No path currently 500s (each is guarded upstream), but it is fragile and the
       actions all repeat parse → validate → call → map-error.
       → a `DomainError` class thrown by the repository, plus one `action()` wrapper that
       maps it to `fail(409, …)`.
-- [ ] **`buildGraph` does four things** — grouping members, creating hubs, counting
+- [x] **`buildGraph` does four things** — grouping members, creating hubs, counting
       degrees, assembling nodes — and its `add` helper is write-only code:
       `(map.get(key) ?? map.set(key, []).get(key)!).push(id)`.
       → split into named steps; replace the helper with a readable `pushTo`.
 
 ## Phase 3 — Tests
 
-- [ ] **`repository.ts` has no tests** despite being the most logic-dense module
+- [x] **`repository.ts` has no tests** despite being the most logic-dense module
       (transactions, dedupe wiring, merge semantics). Testable by pointing
       `BOOKMARKS_FILE` at a temp file.
-- [ ] `html.ts` (entity decode/escape) — small but trivially testable.
+- [x] `html.ts` (entity decode/escape) — small but trivially testable.
 
 ---
 
+## Outcome
+
+- 26 new repository tests, verified by mutation testing: removing the import dedupe
+  skip failed 2 of them, removing the update self-collision guard failed 2 more.
+- Errors now carry their own status. `DomainError` + a `guard()` wrapper replaced five
+  hand-rolled failure paths; a missing bookmark answers 404 rather than a generic 409.
+- Verified end to end after refactoring: add, exact duplicate, probable duplicate,
+  forced add, merge, empty URL, URL collision, unknown bookmark, delete.
+
 ## Deliberately NOT doing (Round 2)
+
+- **Unifying the two epoch converters** (`isoFromAddDate`, `isoFromChromeTime`). They
+  are three lines each, live in the modules that own their formats, and share only a
+  shape — not a rule. A shared `time.ts` would put Chrome's WebKit epoch next to the
+  Netscape Unix epoch and invite passing the wrong one.
 
 - **Merging `updateBookmark` into `updateBookmarkByUrl`.** They share a find-index /
   copy / replace shape, but both read clearly as they are; merging trades four saved

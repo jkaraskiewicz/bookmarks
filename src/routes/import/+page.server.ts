@@ -5,6 +5,7 @@ import { parseNetscape } from '$lib/import/netscape';
 import { parseChromeBookmarks, folderCounts } from '$lib/import/chromeJson';
 import { parseUrlList } from '$lib/import/urlList';
 import { prepareItems, type ImportOptions } from '$lib/import/prepare';
+import { splitList } from '$lib/tags';
 import { addBookmarks } from '$lib/server/repository';
 import { listChromeProfiles, readChromeBookmarksJson } from '$lib/server/chromeProfile';
 import { refreshMetadataInBackground } from '$lib/server/enrichment';
@@ -12,18 +13,10 @@ import { refreshMetadataInBackground } from '$lib/server/enrichment';
 /** How many freshly imported bookmarks we enrich right away, to avoid a fetch storm. */
 const ENRICH_LIMIT = 25;
 
-function parseTags(raw: FormDataEntryValue | null): string[] {
-	if (typeof raw !== 'string') return [];
-	return raw
-		.split(/[,\n]/)
-		.map((t) => t.trim())
-		.filter(Boolean);
-}
-
 function readOptions(form: FormData): ImportOptions {
 	return {
 		collectionPrefix: String(form.get('collectionPrefix') ?? '').trim() || undefined,
-		extraTags: parseTags(form.get('extraTags')),
+		extraTags: splitList(form.get('extraTags') as string | null),
 		onlyCollection: String(form.get('onlyCollection') ?? '').trim() || undefined
 	};
 }

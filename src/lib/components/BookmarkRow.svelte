@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { Bookmark } from '$lib/types';
 	import { hostname } from '$lib/url';
+	import { iconButton } from './ui';
 
 	let {
 		bookmark,
@@ -14,9 +15,6 @@
 		ontoggleTag: (tag: string) => void;
 		onedit: (bookmark: Bookmark) => void;
 	} = $props();
-
-	const iconButton =
-		'inline-flex h-6 w-6 items-center justify-center rounded text-xs leading-none text-neutral-400 hover:bg-neutral-800';
 </script>
 
 <li class="group flex items-center gap-3 py-2">
@@ -69,7 +67,7 @@
 	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
 		<button
 			onclick={() => onedit(bookmark)}
-			class="inline-flex h-6 items-center justify-center rounded px-1.5 text-xs leading-none text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+			class="{iconButton} w-auto px-1.5 hover:text-neutral-100"
 			title="Edit">Edit</button
 		>
 		<form method="POST" action="?/refresh" use:enhance class="contents">

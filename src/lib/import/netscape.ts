@@ -1,5 +1,6 @@
 import type { Bookmark } from '$lib/types';
 import { decodeEntities, escapeHtml } from '$lib/html';
+import { splitList } from '$lib/tags';
 import type { ImportItem } from './types';
 
 /**
@@ -30,14 +31,6 @@ function isoFromAddDate(raw: string | undefined): string | undefined {
 	return new Date(seconds * 1000).toISOString();
 }
 
-/** Split the `TAGS="a,b"` attribute some exporters write (Firefox, Delicious). */
-function parseTagAttr(raw: string | undefined): string[] {
-	return (raw ?? '')
-		.split(',')
-		.map((t) => t.trim())
-		.filter(Boolean);
-}
-
 /**
  * Parse a Netscape bookmark file into import items. Folder nesting becomes a
  * `/`-separated collection path, matching our own collection convention.
@@ -66,7 +59,7 @@ export function parseNetscape(html: string): ImportItem[] {
 			last = {
 				url: href,
 				title: decodeEntities(anchorText) || undefined,
-				tags: parseTagAttr(attr(anchorAttrs, 'tags')),
+				tags: splitList(attr(anchorAttrs, 'tags'), /,/),
 				collection: folders.filter(Boolean).join('/') || undefined,
 				added: isoFromAddDate(attr(anchorAttrs, 'add_date'))
 			};

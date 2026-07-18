@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { fieldClass, inputBase } from './ui';
+	import { fieldClass, inputBase, primaryButton, secondaryButton } from './ui';
 	import DuplicateNotice from './DuplicateNotice.svelte';
 
 	let addUrl = $state('');
@@ -64,13 +64,10 @@
 			type="button"
 			onclick={() => (showAdvanced = !showAdvanced)}
 			aria-expanded={showAdvanced}
-			class="rounded-md border border-neutral-700 px-2.5 py-1.5 text-sm text-neutral-400 hover:bg-neutral-800"
+			class="{secondaryButton} px-2.5"
 			title="More fields">{showAdvanced ? 'Less −' : 'More +'}</button
 		>
-		<button
-			class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
-			type="submit">Add</button
-		>
+		<button class={primaryButton} type="submit">Add</button>
 	</div>
 
 	{#if showAdvanced}

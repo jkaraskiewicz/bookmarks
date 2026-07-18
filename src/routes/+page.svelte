@@ -9,6 +9,7 @@
 	import BookmarkList from '$lib/components/BookmarkList.svelte';
 	import EditDialog from '$lib/components/EditDialog.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
+	import { secondaryButton } from '$lib/components/ui';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -56,10 +57,8 @@
 		<div class="mx-auto flex max-w-5xl items-start gap-4">
 			<div class="min-w-0 flex-1"><AddBar /></div>
 			<ViewToggle />
-			<a
-				href="/import"
-				class="shrink-0 rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
-				title="Import & export bookmarks">Import</a
+			<a href="/import" class="shrink-0 {secondaryButton}" title="Import & export bookmarks"
+				>Import</a
 			>
 		</div>
 		{#if errorMessage}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { Bookmark } from '$lib/types';
-	import { fieldClass } from './ui';
+	import { fieldClass, ghostButton, primaryButton } from './ui';
 
 	let { bookmark, onclose }: { bookmark: Bookmark; onclose: () => void } = $props();
 </script>
@@ -62,15 +62,8 @@
 		{/if}
 
 		<div class="flex justify-end gap-2 pt-1">
-			<button
-				type="button"
-				onclick={onclose}
-				class="rounded-md px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-800">Cancel</button
-			>
-			<button
-				class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
-				>Save</button
-			>
+			<button type="button" onclick={onclose} class={ghostButton}>Cancel</button>
+			<button class={primaryButton}>Save</button>
 		</div>
 	</form>
 </div>

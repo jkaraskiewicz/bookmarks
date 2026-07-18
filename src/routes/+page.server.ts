@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { NewBookmark } from '$lib/types';
+import { splitList } from '$lib/tags';
 import {
 	readBookmarks,
 	addBookmark,
@@ -9,21 +10,14 @@ import {
 	mergeIntoBookmark
 } from '$lib/server/repository';
 import { refreshMetadataInBackground, pendingMetadata } from '$lib/server/enrichment';
-
-/** Split a comma/newline separated tag string into a clean list. */
-function parseTags(raw: FormDataEntryValue | null): string[] {
-	if (typeof raw !== 'string') return [];
-	return raw
-		.split(/[,\n]/)
-		.map((t) => t.trim())
-		.filter(Boolean);
-}
+import { guard } from '$lib/server/action';
+import { invalid } from '$lib/server/errors';
 
 function readFields(form: FormData): NewBookmark {
 	return {
 		url: String(form.get('url') ?? ''),
 		title: String(form.get('title') ?? ''),
-		tags: parseTags(form.get('tags')),
+		tags: splitList(form.get('tags') as string | null),
 		collection: String(form.get('collection') ?? ''),
 		notes: String(form.get('notes') ?? '')
 	};
@@ -40,64 +34,66 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	add: async ({ request }) => {
-		const form = await request.formData();
-		const fields = readFields(form);
-		if (!fields.url?.trim()) return fail(400, { message: 'A URL is required.' });
+	add: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const fields = readFields(form);
+			if (!fields.url?.trim()) throw invalid('A URL is required.');
 
-		// Set once the user has answered a "looks like a duplicate" prompt.
-		const force = form.get('force') === 'true';
-		const { bookmark, created, duplicate } = await addBookmark(fields, force);
+			// Set once the user has answered a "looks like a duplicate" prompt.
+			const force = form.get('force') === 'true';
+			const { bookmark, created, duplicate } = await addBookmark(fields, force);
 
-		if (!created) {
-			return fail(409, {
-				message:
-					duplicate === 'exact'
-						? 'That URL is already bookmarked.'
-						: 'That looks like a bookmark you already have.',
-				duplicate,
-				existing: { url: bookmark.url, title: bookmark.title, collection: bookmark.collection }
-			});
-		}
+			// Not a DomainError: the response carries the matched bookmark so the add
+			// bar can offer to merge into it or add anyway.
+			if (!created) {
+				return fail(409, {
+					message:
+						duplicate === 'exact'
+							? 'That URL is already bookmarked.'
+							: 'That looks like a bookmark you already have.',
+					duplicate,
+					existing: { url: bookmark.url, title: bookmark.title, collection: bookmark.collection }
+				});
+			}
 
-		// Enrich title/description/favicon in the background; UI refreshes shortly after.
-		refreshMetadataInBackground(bookmark.url);
-		return { added: bookmark.url };
-	},
+			// Enrich title/description/favicon in the background; UI refreshes shortly after.
+			refreshMetadataInBackground(bookmark.url);
+			return { added: bookmark.url };
+		}),
 
 	/** "Add my new tags to it" — fold the typed fields into the existing bookmark. */
-	merge: async ({ request }) => {
-		const form = await request.formData();
-		const target = String(form.get('existingUrl') ?? '');
-		if (!target) return fail(400, { message: 'Missing bookmark reference.' });
-		await mergeIntoBookmark(target, readFields(form));
-		return { merged: target };
-	},
+	merge: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const target = String(form.get('existingUrl') ?? '');
+			if (!target) throw invalid('Missing bookmark reference.');
+			await mergeIntoBookmark(target, readFields(form));
+			return { merged: target };
+		}),
 
-	update: async ({ request }) => {
-		const form = await request.formData();
-		const originalUrl = String(form.get('originalUrl') ?? '');
-		if (!originalUrl) return fail(400, { message: 'Missing bookmark reference.' });
-		try {
+	update: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const originalUrl = String(form.get('originalUrl') ?? '');
+			if (!originalUrl) throw invalid('Missing bookmark reference.');
 			await updateBookmark(originalUrl, readFields(form));
-		} catch (err) {
-			// e.g. the edited URL collides with another bookmark.
-			return fail(409, { message: (err as Error).message });
-		}
-		return { updated: true };
-	},
+			return { updated: true };
+		}),
 
-	delete: async ({ request }) => {
-		const url = await formUrl(request);
-		if (!url) return fail(400, { message: 'Missing URL.' });
-		await deleteBookmark(url);
-		return { deleted: true };
-	},
+	delete: ({ request }) =>
+		guard(async () => {
+			const url = await formUrl(request);
+			if (!url) throw invalid('Missing URL.');
+			await deleteBookmark(url);
+			return { deleted: true };
+		}),
 
-	refresh: async ({ request }) => {
-		const url = await formUrl(request);
-		if (!url) return fail(400, { message: 'Missing URL.' });
-		refreshMetadataInBackground(url);
-		return { refreshed: url };
-	}
+	refresh: ({ request }) =>
+		guard(async () => {
+			const url = await formUrl(request);
+			if (!url) throw invalid('Missing URL.');
+			refreshMetadataInBackground(url);
+			return { refreshed: url };
+		})
 };

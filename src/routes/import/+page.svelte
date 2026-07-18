@@ -1,16 +1,12 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { fieldClass } from '$lib/components/ui';
+	import { fieldClass, primaryButton, secondaryButton, cardClass } from '$lib/components/ui';
 	import ImportOptionFields from '$lib/components/ImportOptionFields.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const errorMessage = $derived(form && 'message' in form ? form.message : null);
 	const summary = $derived(form && 'summary' in form ? form.summary : null);
-
-	const buttonClass =
-		'rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500';
-	const cardClass = 'rounded-lg border border-neutral-800 bg-neutral-950/40 p-5';
 
 	// Folders that look like a "Bookmark all tabs" drop, surfaced as quick picks.
 	const folderOptions = $derived(data.folders.filter((f) => f.path));
@@ -109,7 +105,7 @@
 					</datalist>
 
 					<ImportOptionFields />
-					<button class={buttonClass} type="submit">Import from Chrome</button>
+					<button class={primaryButton} type="submit">Import from Chrome</button>
 				</form>
 			{:else}
 				<p class="mt-3 text-sm text-neutral-500">
@@ -134,7 +130,7 @@
 					class="block w-full text-sm text-neutral-300 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-800 file:px-3 file:py-1.5 file:text-sm file:text-neutral-200 hover:file:bg-neutral-700"
 				/>
 				<ImportOptionFields />
-				<button class={buttonClass} type="submit">Import file</button>
+				<button class={primaryButton} type="submit">Import file</button>
 			</form>
 		</section>
 
@@ -153,7 +149,7 @@
 					placeholder={'https://svelte.dev  Svelte\nhttps://news.ycombinator.com'}
 					class="{fieldClass} font-mono text-xs"></textarea>
 				<ImportOptionFields />
-				<button class={buttonClass} type="submit">Import URLs</button>
+				<button class={primaryButton} type="submit">Import URLs</button>
 			</form>
 		</section>
 
@@ -163,10 +159,7 @@
 			<p class="mt-1 text-sm text-neutral-400">
 				Download everything as a bookmarks HTML file you can import into any browser.
 			</p>
-			<a
-				href="/export"
-				download
-				class="mt-4 inline-block rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800"
+			<a href="/export" download class="mt-4 inline-block {secondaryButton}"
 				>Download bookmarks.html</a
 			>
 		</section>

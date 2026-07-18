@@ -17,6 +17,7 @@
 		existing: Existing;
 	} = $props();
 
+	// Smaller than the shared secondary button, to sit inside the notice.
 	const actionClass =
 		'rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800';
 </script>

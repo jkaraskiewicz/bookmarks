@@ -34,57 +34,81 @@ const collectionId = (collection: string) => `c:${collection}`;
  * shows real groupings; bookmarks with no shared attribute appear as lone nodes.
  */
 export function buildGraph(bookmarks: Bookmark[], minShared = 2): Graph {
-	// Group bookmark ids by each tag and collection.
-	const tagMembers = new Map<string, string[]>();
-	const collectionMembers = new Map<string, string[]>();
-	const add = (map: Map<string, string[]>, key: string, id: string) => {
-		(map.get(key) ?? map.set(key, []).get(key)!).push(id);
-	};
+	const tagMembers = groupBy(bookmarks, (b) => b.tags);
+	const collectionMembers = groupBy(bookmarks, (b) => (b.collection ? [b.collection] : []));
 
-	for (const b of bookmarks) {
-		const id = bookmarkId(b.url);
-		for (const tag of b.tags) add(tagMembers, tag, id);
-		if (b.collection) add(collectionMembers, b.collection, id);
+	const tagHubs = hubsFor(tagMembers, 'tag', tagId, (tag) => `#${tag}`, minShared);
+	const collectionHubs = hubsFor(
+		collectionMembers,
+		'collection',
+		collectionId,
+		(path) => path,
+		minShared
+	);
+
+	const hubs = [...tagHubs, ...collectionHubs];
+	const edges = hubs.flatMap((hub) => hub.edges);
+
+	return {
+		// Bookmarks first so they render beneath the hubs.
+		nodes: [...bookmarkNodes(bookmarks, edges), ...hubs.map((hub) => hub.node)],
+		edges
+	};
+}
+
+/** Map each attribute of a bookmark to the ids of the bookmarks carrying it. */
+function groupBy(bookmarks: Bookmark[], keysOf: (b: Bookmark) => string[]): Map<string, string[]> {
+	const members = new Map<string, string[]>();
+
+	for (const bookmark of bookmarks) {
+		for (const key of keysOf(bookmark)) {
+			const ids = members.get(key);
+			if (ids) ids.push(bookmarkId(bookmark.url));
+			else members.set(key, [bookmarkId(bookmark.url)]);
+		}
 	}
 
-	const nodes: GraphNode[] = [];
-	const edges: GraphEdge[] = [];
-	const degree = new Map<string, number>();
-	const bump = (id: string) => degree.set(id, (degree.get(id) ?? 0) + 1);
+	return members;
+}
 
-	// Hub nodes + edges, only for attributes shared by >= minShared bookmarks.
-	const addHub = (
-		members: Map<string, string[]>,
-		kind: 'tag' | 'collection',
-		makeId: (key: string) => string,
-		label: (key: string) => string
-	) => {
-		for (const [key, ids] of members) {
-			if (ids.length < minShared) continue;
-			const hubId = makeId(key);
-			nodes.push({ id: hubId, kind, label: label(key), degree: ids.length });
-			for (const id of ids) {
-				edges.push({ id: `${hubId}~${id}`, source: id, target: hubId });
-				bump(id);
-			}
-		}
-	};
+/**
+ * Turn each sufficiently-shared attribute into a hub node plus its edges. Attributes
+ * held by fewer than `minShared` bookmarks are dropped: they describe no grouping.
+ */
+function hubsFor(
+	members: Map<string, string[]>,
+	kind: 'tag' | 'collection',
+	makeId: (key: string) => string,
+	makeLabel: (key: string) => string,
+	minShared: number
+): { node: GraphNode; edges: GraphEdge[] }[] {
+	const hubs: { node: GraphNode; edges: GraphEdge[] }[] = [];
 
-	addHub(tagMembers, 'tag', tagId, (t) => `#${t}`);
-	addHub(collectionMembers, 'collection', collectionId, (c) => c);
-
-	// Bookmark nodes (all of them, connected or not).
-	for (const b of bookmarks) {
-		const id = bookmarkId(b.url);
-		nodes.unshift({
-			id,
-			kind: 'bookmark',
-			label: b.title,
-			degree: degree.get(id) ?? 0,
-			url: b.url,
-			favicon: b.favicon
+	for (const [key, ids] of members) {
+		if (ids.length < minShared) continue;
+		const hubId = makeId(key);
+		hubs.push({
+			node: { id: hubId, kind, label: makeLabel(key), degree: ids.length },
+			edges: ids.map((id) => ({ id: `${hubId}~${id}`, source: id, target: hubId }))
 		});
 	}
 
-	return { nodes, edges };
+	return hubs;
+}
+
+/** One node per bookmark, connected or not, with its degree taken from the edges. */
+function bookmarkNodes(bookmarks: Bookmark[], edges: GraphEdge[]): GraphNode[] {
+	const degree = new Map<string, number>();
+	for (const edge of edges) {
+		degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1);
+	}
+
+	return bookmarks.map((bookmark) => ({
+		id: bookmarkId(bookmark.url),
+		kind: 'bookmark' as const,
+		label: bookmark.title,
+		degree: degree.get(bookmarkId(bookmark.url)) ?? 0,
+		url: bookmark.url,
+		favicon: bookmark.favicon
+	}));
 }

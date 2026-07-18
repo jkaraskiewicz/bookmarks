@@ -7,6 +7,7 @@ import { findDuplicate, strictKey, looseKey } from '$lib/dedupe';
 import { parseBookmarks, serializeBookmarks } from './toml';
 import { bookmarksFile } from './config';
 import { createMutex } from './mutex';
+import { invalid, conflict, notFound } from './errors';
 
 const lock = createMutex();
 
@@ -57,6 +58,22 @@ function normalizeFields(input: NewBookmark) {
 	};
 }
 
+/**
+ * Build a stored bookmark from user or imported input. `added` lets an import keep
+ * the date the bookmark was originally created; otherwise it is created now.
+ */
+function buildBookmark(url: string, input: NewBookmark, added?: string): Bookmark {
+	const fields = normalizeFields(input);
+	return {
+		url,
+		title: fields.title ?? url,
+		tags: fields.tags ?? [],
+		collection: fields.collection,
+		notes: fields.notes,
+		added: added ?? new Date().toISOString()
+	};
+}
+
 export interface AddResult {
 	bookmark: Bookmark;
 	created: boolean;
@@ -73,7 +90,7 @@ export interface AddResult {
 export function addBookmark(input: NewBookmark, force = false): Promise<AddResult> {
 	return transact<AddResult>((list) => {
 		const url = normalizeUrl(input.url);
-		if (!url) throw new Error('A URL is required.');
+		if (!url) throw invalid('A URL is required.');
 
 		const { exact, similar } = findDuplicate(list, url);
 		if (exact) return { result: { bookmark: exact, created: false, duplicate: 'exact' } };
@@ -81,15 +98,7 @@ export function addBookmark(input: NewBookmark, force = false): Promise<AddResul
 			return { result: { bookmark: similar, created: false, duplicate: 'similar' } };
 		}
 
-		const fields = normalizeFields(input);
-		const bookmark: Bookmark = {
-			url,
-			title: fields.title ?? url,
-			tags: fields.tags ?? [],
-			collection: fields.collection,
-			notes: fields.notes,
-			added: new Date().toISOString()
-		};
+		const bookmark = buildBookmark(url, input);
 		return { next: [bookmark, ...list], result: { bookmark, created: true } };
 	});
 }
@@ -131,15 +140,7 @@ export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
 			const near = loose.get(looseKey(url));
 			if (near) possible.push({ url, existing: near.url });
 
-			const fields = normalizeFields(item);
-			const bookmark: Bookmark = {
-				url,
-				title: fields.title ?? url,
-				tags: fields.tags ?? [],
-				collection: fields.collection,
-				notes: fields.notes,
-				added: item.added ?? new Date().toISOString()
-			};
+			const bookmark = buildBookmark(url, item, item.added);
 			created.push(bookmark);
 			known.set(strictKey(url), bookmark);
 			if (!near) loose.set(looseKey(url), bookmark);
@@ -162,12 +163,12 @@ export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
 export function updateBookmark(originalUrl: string, changes: NewBookmark): Promise<Bookmark> {
 	return transact((list) => {
 		const idx = list.findIndex((b) => b.url === originalUrl);
-		if (idx === -1) throw new Error('Bookmark not found.');
+		if (idx === -1) throw notFound();
 
 		const current = list[idx];
 		const nextUrl = normalizeUrl(changes.url) || current.url;
 		if (findDuplicate(list, nextUrl, originalUrl).exact) {
-			throw new Error('Another bookmark already uses that URL.');
+			throw conflict('Another bookmark already uses that URL.');
 		}
 
 		const fields = normalizeFields(changes);
