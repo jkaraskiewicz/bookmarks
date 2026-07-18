@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import type { Bookmark, NewBookmark } from '$lib/types';
 import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { normalizeUrl } from '$lib/url';
+import { findDuplicate, strictKey, looseKey } from '$lib/dedupe';
 import { parseBookmarks, serializeBookmarks } from './toml';
 import { bookmarksFile } from './config';
 import { createMutex } from './mutex';
@@ -59,16 +60,26 @@ function normalizeFields(input: NewBookmark) {
 export interface AddResult {
 	bookmark: Bookmark;
 	created: boolean;
+	/** Set when the add was refused: how the existing bookmark matched. */
+	duplicate?: 'exact' | 'similar';
 }
 
-/** Add a bookmark. If the URL already exists, returns the existing one (created:false). */
-export function addBookmark(input: NewBookmark): Promise<AddResult> {
+/**
+ * Add a bookmark, refusing duplicates. A *certain* duplicate (same page, differing
+ * only in case/port/fragment/tracking params) is always refused. A *probable* one
+ * (www, http/https, trailing slash) is refused unless `force` is set, so the caller
+ * can ask the user first rather than guessing.
+ */
+export function addBookmark(input: NewBookmark, force = false): Promise<AddResult> {
 	return transact<AddResult>((list) => {
 		const url = normalizeUrl(input.url);
 		if (!url) throw new Error('A URL is required.');
 
-		const existing = list.find((b) => b.url === url);
-		if (existing) return { result: { bookmark: existing, created: false } };
+		const { exact, similar } = findDuplicate(list, url);
+		if (exact) return { result: { bookmark: exact, created: false, duplicate: 'exact' } };
+		if (similar && !force) {
+			return { result: { bookmark: similar, created: false, duplicate: 'similar' } };
+		}
 
 		const fields = normalizeFields(input);
 		const bookmark: Bookmark = {
@@ -84,50 +95,85 @@ export function addBookmark(input: NewBookmark): Promise<AddResult> {
 }
 
 /**
+ * Merge user-supplied tags and notes into an existing bookmark — the "add my new
+ * tags to it" path when someone re-adds a URL they already have.
+ */
+export function mergeIntoBookmark(url: string, input: NewBookmark): Promise<Bookmark | null> {
+	const fields = normalizeFields(input);
+	return updateBookmarkByUrl(url, (current) => ({
+		...current,
+		tags: [...new Set([...current.tags, ...(fields.tags ?? [])])],
+		notes: [current.notes, fields.notes].filter(Boolean).join('\n') || undefined
+	}));
+}
+
+/**
  * Add many bookmarks in a single read-modify-write. URLs already present (in the
  * file or earlier in the batch) are skipped, never overwritten — an import must
  * not clobber notes or tags you've curated here.
  */
 export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
 	return transact((list) => {
-		const known = new Set(list.map((b) => b.url));
+		const known = new Map(list.map((b) => [strictKey(b.url), b]));
+		const loose = new Map(list.map((b) => [looseKey(b.url), b]));
 		const created: Bookmark[] = [];
+		const possible: ImportSummary['possibleDuplicates'] = [];
 
 		for (const item of items) {
 			const url = normalizeUrl(item.url);
-			if (!url || known.has(url)) continue;
-			known.add(url);
+			if (!url) continue;
+
+			// Certainly already here: skip quietly.
+			if (known.has(strictKey(url))) continue;
+
+			// Probably already here: import it anyway, but report it — silently
+			// dropping a bookmark on a guess is worse than keeping a duplicate.
+			const near = loose.get(looseKey(url));
+			if (near) possible.push({ url, existing: near.url });
 
 			const fields = normalizeFields(item);
-			created.push({
+			const bookmark: Bookmark = {
 				url,
 				title: fields.title ?? url,
 				tags: fields.tags ?? [],
 				collection: fields.collection,
 				notes: fields.notes,
 				added: item.added ?? new Date().toISOString()
-			});
+			};
+			created.push(bookmark);
+			known.set(strictKey(url), bookmark);
+			if (!near) loose.set(looseKey(url), bookmark);
 		}
 
 		const summary: ImportSummary = {
 			added: created.length,
-			skipped: items.length - created.length
+			skipped: items.length - created.length,
+			possibleDuplicates: possible
 		};
 		return { next: created.length ? [...created, ...list] : undefined, result: summary };
 	});
 }
 
-/** Update an existing bookmark identified by its (original) URL. */
+/**
+ * Update an existing bookmark identified by its (original) URL. Refuses to point it
+ * at a URL another bookmark already occupies, which would otherwise create a
+ * duplicate through the back door.
+ */
 export function updateBookmark(originalUrl: string, changes: NewBookmark): Promise<Bookmark> {
 	return transact((list) => {
 		const idx = list.findIndex((b) => b.url === originalUrl);
 		if (idx === -1) throw new Error('Bookmark not found.');
 
 		const current = list[idx];
+		const nextUrl = normalizeUrl(changes.url) || current.url;
+		if (findDuplicate(list, nextUrl, originalUrl).exact) {
+			throw new Error('Another bookmark already uses that URL.');
+		}
+
 		const fields = normalizeFields(changes);
 		const updated: Bookmark = {
 			...current,
-			url: normalizeUrl(changes.url) || current.url,
+			url: nextUrl,
 			title: fields.title ?? current.title,
 			tags: fields.tags ?? current.tags,
 			collection: fields.collection,

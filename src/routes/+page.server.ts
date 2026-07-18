@@ -1,7 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { NewBookmark } from '$lib/types';
-import { readBookmarks, addBookmark, updateBookmark, deleteBookmark } from '$lib/server/repository';
+import {
+	readBookmarks,
+	addBookmark,
+	updateBookmark,
+	deleteBookmark,
+	mergeIntoBookmark
+} from '$lib/server/repository';
 import { refreshMetadataInBackground, pendingMetadata } from '$lib/server/enrichment';
 
 /** Split a comma/newline separated tag string into a clean list. */
@@ -39,20 +45,45 @@ export const actions: Actions = {
 		const fields = readFields(form);
 		if (!fields.url?.trim()) return fail(400, { message: 'A URL is required.' });
 
-		const { bookmark, created } = await addBookmark(fields);
+		// Set once the user has answered a "looks like a duplicate" prompt.
+		const force = form.get('force') === 'true';
+		const { bookmark, created, duplicate } = await addBookmark(fields, force);
+
 		if (!created) {
-			return fail(409, { message: 'That URL is already bookmarked.', url: bookmark.url });
+			return fail(409, {
+				message:
+					duplicate === 'exact'
+						? 'That URL is already bookmarked.'
+						: 'That looks like a bookmark you already have.',
+				duplicate,
+				existing: { url: bookmark.url, title: bookmark.title, collection: bookmark.collection }
+			});
 		}
+
 		// Enrich title/description/favicon in the background; UI refreshes shortly after.
 		refreshMetadataInBackground(bookmark.url);
 		return { added: bookmark.url };
+	},
+
+	/** "Add my new tags to it" — fold the typed fields into the existing bookmark. */
+	merge: async ({ request }) => {
+		const form = await request.formData();
+		const target = String(form.get('existingUrl') ?? '');
+		if (!target) return fail(400, { message: 'Missing bookmark reference.' });
+		await mergeIntoBookmark(target, readFields(form));
+		return { merged: target };
 	},
 
 	update: async ({ request }) => {
 		const form = await request.formData();
 		const originalUrl = String(form.get('originalUrl') ?? '');
 		if (!originalUrl) return fail(400, { message: 'Missing bookmark reference.' });
-		await updateBookmark(originalUrl, readFields(form));
+		try {
+			await updateBookmark(originalUrl, readFields(form));
+		} catch (err) {
+			// e.g. the edited URL collides with another bookmark.
+			return fail(409, { message: (err as Error).message });
+		}
 		return { updated: true };
 	},
 

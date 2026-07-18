@@ -1,3 +1,4 @@
+import { strictKey } from '$lib/dedupe';
 import type { ImportItem } from './types';
 
 export interface ImportOptions {
@@ -31,8 +32,10 @@ export function prepareItems(items: ImportItem[], options: ImportOptions = {}): 
 
 	for (const item of items) {
 		if (onlyCollection && !withinScope(item.collection, onlyCollection)) continue;
-		if (seen.has(item.url)) continue;
-		seen.add(item.url);
+		// Same page twice in one file (browsers file a page in two folders): keep the first.
+		const key = strictKey(item.url);
+		if (seen.has(key)) continue;
+		seen.add(key);
 
 		prepared.push({
 			...item,

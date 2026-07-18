@@ -39,6 +39,31 @@
 					>{/if}
 				<a href="/" class="underline">View them →</a>
 			</p>
+
+			{#if summary.possibleDuplicates.length}
+				<details
+					class="rounded-md border border-neutral-800 bg-neutral-950/40 px-4 py-3 text-sm text-neutral-300"
+				>
+					<summary class="cursor-pointer">
+						{summary.possibleDuplicates.length} imported bookmark{summary.possibleDuplicates
+							.length === 1
+							? ''
+							: 's'} may duplicate something you already had
+					</summary>
+					<p class="mt-2 text-xs text-neutral-500">
+						These differ only by <code>www</code>, <code>http</code>/<code>https</code> or a trailing
+						slash, so they were imported rather than dropped. Delete either side if it's redundant.
+					</p>
+					<ul class="mt-2 space-y-2">
+						{#each summary.possibleDuplicates as pair (pair.url)}
+							<li class="min-w-0">
+								<span class="block truncate text-neutral-300">＋ {pair.url}</span>
+								<span class="block truncate text-neutral-500">↪ existing: {pair.existing}</span>
+							</li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
 		{/if}
 		{#if errorMessage}
 			<p

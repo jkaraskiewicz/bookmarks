@@ -123,6 +123,51 @@ added = 2026-07-18T10:31:00
   includes all descendants (prefix match). Tags remain the many-to-many mechanism.
 - **`favicon` stored as a remote URL**, not downloaded — keeps storage plain-text and small.
 
+### 6a. Duplicate detection — DECIDED
+
+`url` is the identity, but the _same page_ can be written many ways. Two derived keys,
+never stored — the URL you typed is kept verbatim, so the TOML stays yours and these
+rules can change later without a migration.
+
+**Strict key — certainly the same page. Merged without asking.**
+Lowercased host/scheme, default ports dropped, decorative `#fragment` dropped, empty
+path ≡ `/`, tracking parameters stripped by denylist (`utm_*`, `fbclid`, `gclid`, …),
+remaining query parameters sorted.
+
+**Loose key — probably the same page. Warns, never merges on its own.**
+Everything above, plus folding `www`/non-`www`, `http`/`https` and a trailing slash.
+
+**Deliberately NOT done:** `youtu.be` ↔ `youtube.com`, AMP unwrapping, `m.` subdomains,
+locale paths, or following redirects at add time. Site-specific rules with an endless
+tail, and a network round-trip on every add.
+
+**Two carve-outs that matter:**
+
+- A fragment is kept when it looks like a route (`#/path`, `#!/path`) — hash-routed
+  apps put real page identity there.
+- Only _known tracking_ parameters are stripped, never the query wholesale.
+  `youtube.com/watch?v=…` is the standing example: the query **is** the identity, and
+  blanket-stripping it would merge unrelated videos.
+
+**Behavior**
+
+| Situation                | Strict match                     | Loose match                               |
+| ------------------------ | -------------------------------- | ----------------------------------------- |
+| Adding a URL by hand     | Refused; offers to open or merge | Refused; offers merge **or** "add anyway" |
+| Importing a batch        | Skipped quietly                  | **Imported** and reported for review      |
+| Editing a bookmark's URL | Refused (would collide)          | Allowed                                   |
+
+The asymmetry on import is deliberate: silently dropping a bookmark because of a
+_guess_ is worse than keeping a duplicate, so probable matches are imported and listed
+rather than discarded.
+
+**Empirical note (why this scope).** Measured against a real 362-bookmark Chrome
+library: exact matches caught 2 duplicates, fragment normalization 1 more, and
+`www` / `http`-vs-`https` / tracking-param / trailing-slash rules caught **zero**
+additional. The aggressive tier is cheap but earns nothing, which is why it warns
+instead of merging. A dedicated "find duplicates" cleanup screen was considered and
+deferred — with dedupe applied at import time, it would open to an empty list.
+
 ## 7. Metadata Auto-Fetch — DECIDED (behavior)
 
 - When a bookmark is **added** (via UI or discovered as a hand-added entry missing data),

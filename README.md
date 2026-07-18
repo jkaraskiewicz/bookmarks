@@ -1,87 +1,170 @@
 # Bookmarks
 
-A personal, local-only bookmark manager. A small web UI (SvelteKit) on top of a
-single, hand-editable `bookmarks.toml` file — the file is the source of truth.
+A single-user bookmark manager that runs on your own machine. It is a small web
+application (built with SvelteKit) on top of one plain-text file, `bookmarks.toml`.
 
-See [`docs/design-spec.md`](docs/design-spec.md) for the full design & requirements.
+That file is the authoritative copy of your data: the application reads from it and
+writes back to it, and nothing is stored anywhere else. You can edit it directly in a
+text editor, and the application will reflect your changes.
+
+See [`docs/design-spec.md`](docs/design-spec.md) for the full design and requirements.
 
 ## Features
 
-- Add / browse / edit / delete bookmarks from the browser.
-- Tags and collections, with search + filtering.
-- Automatic metadata fetch (title, description, favicon) when you add a URL.
-- Graph view showing how bookmarks cluster by shared tags and collections.
-- Import from Chrome (and any browser) + export back out.
-- Plain-text storage you can also edit by hand.
-
-## Importing from Chrome
-
-Open **/import**. Three ways in:
-
-1. **Straight from your Chrome profile** — no export step; the app reads Chrome's
-   bookmarks file directly. Set `CHROME_USER_DATA_DIR` if Chrome lives somewhere unusual.
-2. **An exported bookmarks HTML file** — `chrome://bookmarks` → ⋮ → _Export bookmarks_.
-   Firefox, Safari and Edge produce the same format.
-3. **A pasted list of URLs**, one per line.
-
-**To import all your open tabs:** press <kbd>⇧⌘D</kbd> in Chrome ("Bookmark all tabs…"),
-save them into a new folder, then use option 1 and put that folder's name in
-_"Only this folder"_. Chrome has no direct "export open tabs", so this is the shortest path.
-
-Browser folders become collections, original dates are preserved, and URLs you already
-have are skipped rather than overwritten. **/export** gives you a bookmarks HTML file
-that imports into any browser.
+- Add, browse, edit and delete bookmarks through a web interface.
+- Organize bookmarks with tags and with collections — named folders that can be nested,
+  such as `Dev/Frameworks`.
+- Search and filter across the whole library.
+- Automatic lookup of a page's title, description and icon when a link is added.
+- A map view that arranges bookmarks into clusters based on the tags and collections
+  they have in common.
+- Import from Chrome and other browsers, and export back out again.
+- Plain-text storage that you can also edit by hand.
 
 ## Requirements
 
-- Node.js 20+ (developed on Node 26).
+- Node.js 20 or newer (developed and tested on Node 26).
 
 ## Getting started
 
 ```bash
 npm install
-npm run dev            # http://localhost:5173
+npm run dev            # then open http://localhost:5173
 ```
 
-## Data / storage
+## Importing and exporting
 
-Bookmarks live in a single TOML file, by default at:
+The **/import** page offers three ways to bring bookmarks in.
+
+1. **Directly from Chrome.** The application reads Chrome's own bookmarks file from your
+   computer, so no export is required first. If Chrome is installed in a non-standard
+   location, set the `CHROME_USER_DATA_DIR` environment variable to point at it.
+2. **From an exported bookmarks file.** In Chrome, open `chrome://bookmarks`, then use
+   the ⋮ menu and choose _Export bookmarks_. Firefox, Safari and Edge all export the
+   same file format, so files from those browsers work as well.
+3. **From a pasted list of links**, one per line.
+
+**Importing your open tabs.** Chrome cannot export open tabs directly. The most
+practical route is to press <kbd>⇧⌘D</kbd> and choose "Bookmark all tabs…", which places
+every tab in the current window into a new bookmark folder. Import that folder using
+option 1 above, entering its name in the _"Only this folder"_ field.
+
+When importing, folders from your browser become collections, and the dates on which
+bookmarks were originally saved are preserved. Bookmarks you already have are not added
+a second time; see [Duplicate detection](#duplicate-detection) below.
+
+The **/export** page produces a bookmarks file that can be loaded into any browser.
+
+## Duplicate detection
+
+The application aims to prevent the same page being saved twice.
+
+This is less straightforward than it appears, because one page can be reached through
+several different addresses. A link copied from a newsletter may arrive as
+`nba.com/news?utm_source=twitter`, while the same page typed by hand is simply
+`nba.com/news`. Both lead to the same place, but the text differs. Comparing addresses
+character by character would therefore miss many duplicates.
+
+Instead, the application derives a simplified form of each address and compares those.
+Differences fall into two categories, handled differently.
+
+### Differences treated as identical
+
+These differences never change which page is served, so addresses differing only in
+these respects are treated as the same bookmark and a second copy is not created.
+
+| Difference           | Explanation                                                                                                             | Example                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Capitalization       | The site name is not case-sensitive                                                                                     | `NBA.com/news` = `nba.com/news`                    |
+| Section marker       | The `#` and anything after it scrolls to a section of a page rather than changing the page                              | `nba.com/news#scores` = `nba.com/news`             |
+| Marketing parameters | Values such as `utm_source` and `fbclid` are added by newsletters and advertisements to track where a visitor came from | `nba.com/news?utm_source=twitter` = `nba.com/news` |
+| Explicit port number | `:443` and `:80` are the values already used by default                                                                 | `nba.com:443/news` = `nba.com/news`                |
+
+### Differences that require your decision
+
+The following usually indicate the same page, but not reliably enough to merge
+automatically:
+
+```
+nba.com/news        www.nba.com/news        http://nba.com/news/
+```
+
+When you add an address of this kind, the application reports that a similar bookmark
+already exists and displays it. You may either add the tags and notes you entered to
+the existing bookmark, or keep both as separate entries.
+
+During an import the behavior is deliberately reversed: these entries are imported and
+then listed for review. An unnecessary duplicate can be deleted afterwards, whereas a
+bookmark discarded on the basis of an incorrect assumption is lost without notice.
+
+### Limits of the matching
+
+Beyond the marketing parameters listed above, the portion of an address following `?` is
+never discarded, because it frequently identifies the page itself. Every YouTube video,
+for example, is served from `youtube.com/watch`, and only the `?v=...` value
+distinguishes one video from another. Removing it would reduce an entire video
+collection to a single bookmark.
+
+Equivalences that hold only for particular websites are also out of scope — `youtu.be`
+links against full YouTube addresses, or mobile against desktop versions of a site. Each
+would require a rule specific to that one website, and the set of such rules has no
+natural limit.
+
+### Effect on stored data
+
+Addresses are stored exactly as entered. Simplification is applied only when comparing
+two addresses; it never alters your bookmarks or the contents of `bookmarks.toml`.
+
+## Storage
+
+Bookmarks are held in a single text file, by default at:
 
 ```
 ~/.bookmarks/bookmarks.toml
 ```
 
-Override the location with the `BOOKMARKS_FILE` environment variable:
+The file is kept outside the application directory so that rebuilding or reinstalling
+the application cannot affect your data. To store it elsewhere, set the
+`BOOKMARKS_FILE` environment variable:
 
 ```bash
 BOOKMARKS_FILE=/path/to/bookmarks.toml npm run dev
 ```
 
-The minimum needed to add a bookmark by hand is a `url`:
+A web address is the only field required to add a bookmark by hand:
 
 ```toml
 [[bookmark]]
 url = "https://example.com"
 ```
 
-The app fills in the rest (title/description/favicon) on next load. Note: when the
-app rewrites the file it normalizes formatting, so hand-written comments inside
-bookmark blocks may not be preserved.
+The remaining fields — title, description and icon — are filled in automatically the
+next time the application loads.
+
+**Note on editing the file directly.** Whenever the application saves, it rewrites the
+entire file in a standard layout. All bookmark data is preserved, but formatting is not:
+fields are reordered and spacing is normalized, and any comments placed among the
+bookmark entries are discarded. Editing the file is fully supported; only comments
+written between entries will not survive. The explanatory comments at the top of the
+file are generated by the application and are always present.
 
 ## Scripts
 
 ```bash
-npm run dev        # dev server
-npm run build      # production build (adapter-node -> build/)
-npm run preview    # preview the production build
-npm test           # unit tests (Vitest)
-npm run check      # type-check (svelte-check)
-npm run format     # format with Prettier
+npm run dev        # development server, reloading as files change
+npm run build      # produce a standalone build in build/
+npm run preview    # serve that build locally
+npm test           # run the unit tests
+npm run check      # type-check the project
+npm run format     # apply code formatting
 ```
 
-## Production
+## Running in production
+
+`npm run dev` is intended for development. For everyday use, build the application once
+and run the result:
 
 ```bash
 npm run build
-node build         # serves the app; honors BOOKMARKS_FILE
+node build         # honors BOOKMARKS_FILE, if set
 ```

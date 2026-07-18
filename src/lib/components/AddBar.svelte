@@ -2,23 +2,55 @@
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { fieldClass, inputBase } from './ui';
+	import DuplicateNotice from './DuplicateNotice.svelte';
 
 	let addUrl = $state('');
 	let showAdvanced = $state(false);
+
+	interface Duplicate {
+		kind: 'exact' | 'similar';
+		message: string;
+		existing: { url: string; title: string; collection?: string };
+	}
+	let duplicate = $state<Duplicate | null>(null);
 
 	// Reset + collapse on success; metadata fills in via the page's polling effect.
 	const enhanceAdd: SubmitFunction = () => {
 		return async ({ update, result }) => {
 			await update({ reset: result.type === 'success' });
+
 			if (result.type === 'success') {
 				addUrl = '';
 				showAdvanced = false;
+				duplicate = null;
+				return;
 			}
+
+			// A refused add tells us which bookmark it collided with, so we can offer
+			// to merge into it (or, for a mere resemblance, to add it anyway).
+			const data = result.type === 'failure' ? result.data : undefined;
+			duplicate =
+				data && 'existing' in data
+					? {
+							kind: data.duplicate === 'exact' ? 'exact' : 'similar',
+							message: String(data.message),
+							existing: data.existing as Duplicate['existing']
+						}
+					: null;
 		};
 	};
+
+	// The duplicate prompt's buttons submit this same form via `formaction`, so the
+	// typed fields come along automatically and no DOM surgery is needed.
 </script>
 
-<form method="POST" action="?/add" use:enhance={enhanceAdd} class="w-full">
+<form
+	method="POST"
+	action="?/add"
+	use:enhance={enhanceAdd}
+	oninput={() => (duplicate = null)}
+	class="w-full"
+>
 	<div class="flex items-center gap-3">
 		<h1 class="text-lg font-semibold tracking-tight whitespace-nowrap">🔖 Bookmarks</h1>
 		<input
@@ -54,5 +86,13 @@
 			<textarea name="notes" rows="2" placeholder="Notes" class="col-span-2 {fieldClass}"
 			></textarea>
 		</div>
+	{/if}
+
+	{#if duplicate}
+		<DuplicateNotice
+			kind={duplicate.kind}
+			message={duplicate.message}
+			existing={duplicate.existing}
+		/>
 	{/if}
 </form>

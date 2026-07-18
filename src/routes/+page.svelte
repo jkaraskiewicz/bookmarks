@@ -24,8 +24,11 @@
 		filterBookmarks(data.bookmarks, { search, tags: activeTags, collection: activeCollection })
 	);
 	const pendingSet = $derived(new Set(data.pending));
-	// Error text surfaced by a failed add/update/delete/refresh action.
-	const errorMessage = $derived(form && 'message' in form ? form.message : null);
+	// Error text surfaced by a failed add/update/delete/refresh action. Duplicate
+	// failures are excluded — the add bar shows those inline, with actions attached.
+	const errorMessage = $derived(
+		form && 'message' in form && !('existing' in form) ? form.message : null
+	);
 
 	// While anything is being enriched, re-run the load to pick up results, then stop.
 	$effect(() => {

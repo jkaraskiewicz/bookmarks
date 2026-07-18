@@ -12,5 +12,12 @@ export interface ImportItem extends NewBookmark {
 /** Outcome of an import run. */
 export interface ImportSummary {
 	added: number;
+	/** Certainly-duplicate URLs that were already present, and were not re-added. */
 	skipped: number;
+	/**
+	 * Imported, but they look like something already in the library (www / http /
+	 * trailing-slash variants). Reported rather than dropped, so nothing is lost to
+	 * a guess — the user decides.
+	 */
+	possibleDuplicates: { url: string; existing: string }[];
 }
