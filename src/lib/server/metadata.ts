@@ -24,21 +24,30 @@ function metaContent(html: string, matcher: RegExp): string | undefined {
 	return content ? decodeEntities(content) : undefined;
 }
 
+/** The page title — OpenGraph `og:title` preferred, then `<title>`. */
+function extractTitle(head: string): string | undefined {
+	const og = metaContent(head, /<meta[^>]+property\s*=\s*["']og:title["'][^>]*>/i);
+	if (og) return og;
+	const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+	return title ? decodeEntities(title) : undefined;
+}
+
+/** The page description — OpenGraph preferred, then `<meta name="description">`. */
+function extractDescription(head: string): string | undefined {
+	return (
+		metaContent(head, /<meta[^>]+property\s*=\s*["']og:description["'][^>]*>/i) ??
+		metaContent(head, /<meta[^>]+name\s*=\s*["']description["'][^>]*>/i)
+	);
+}
+
 /** Extract title, description and favicon from a page's HTML. Exported for testing. */
 export function extractMetadata(html: string, baseUrl: string): PageMetadata {
 	const head = html.slice(0, html.indexOf('</head>') + 1 || html.length);
-
-	const title =
-		metaContent(head, /<meta[^>]+property\s*=\s*["']og:title["'][^>]*>/i) ??
-		(head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
-			? decodeEntities(head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)![1])
-			: undefined);
-
-	const description =
-		metaContent(head, /<meta[^>]+property\s*=\s*["']og:description["'][^>]*>/i) ??
-		metaContent(head, /<meta[^>]+name\s*=\s*["']description["'][^>]*>/i);
-
-	return { title, description, favicon: pickFavicon(head, baseUrl) };
+	return {
+		title: extractTitle(head),
+		description: extractDescription(head),
+		favicon: pickFavicon(head, baseUrl)
+	};
 }
 
 /** Rank an icon <link> by its rel — a plain "icon" beats apple-touch beats fluid/mask. */

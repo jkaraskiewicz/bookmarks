@@ -1,14 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { NewBookmark } from '$lib/types';
-import {
-	readBookmarks,
-	addBookmark,
-	updateBookmark,
-	deleteBookmark,
-	refreshMetadataInBackground,
-	pendingMetadata
-} from '$lib/server/storage';
+import { readBookmarks, addBookmark, updateBookmark, deleteBookmark } from '$lib/server/repository';
+import { refreshMetadataInBackground, pendingMetadata } from '$lib/server/enrichment';
 
 /** Split a comma/newline separated tag string into a clean list. */
 function parseTags(raw: FormDataEntryValue | null): string[] {
@@ -27,6 +21,12 @@ function readFields(form: FormData): NewBookmark {
 		collection: String(form.get('collection') ?? ''),
 		notes: String(form.get('notes') ?? '')
 	};
+}
+
+/** Read the `url` field from a submitted form. */
+async function formUrl(request: Request): Promise<string> {
+	const form = await request.formData();
+	return String(form.get('url') ?? '');
 }
 
 export const load: PageServerLoad = async () => {
@@ -57,16 +57,14 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ request }) => {
-		const form = await request.formData();
-		const url = String(form.get('url') ?? '');
+		const url = await formUrl(request);
 		if (!url) return fail(400, { message: 'Missing URL.' });
 		await deleteBookmark(url);
 		return { deleted: true };
 	},
 
 	refresh: async ({ request }) => {
-		const form = await request.formData();
-		const url = String(form.get('url') ?? '');
+		const url = await formUrl(request);
 		if (!url) return fail(400, { message: 'Missing URL.' });
 		refreshMetadataInBackground(url);
 		return { refreshed: url };
