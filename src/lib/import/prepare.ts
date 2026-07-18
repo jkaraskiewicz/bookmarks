@@ -1,4 +1,4 @@
-import { strictKey } from '$lib/dedupe';
+import { exactKey } from '$lib/dedupe';
 import type { ImportItem } from './types';
 
 export interface ImportOptions {
@@ -15,27 +15,28 @@ function joinPath(...parts: (string | undefined)[]): string | undefined {
 	return parts.filter((p) => p?.trim()).join('/') || undefined;
 }
 
-/** True when `path` is `scope` itself or nested beneath it. */
-function withinScope(path: string | undefined, scope: string): boolean {
+/** True when `path` is `root` itself, or nested beneath it. */
+function isWithin(path: string | undefined, root: string): boolean {
 	const value = path ?? '';
-	return value === scope || value.startsWith(`${scope}/`);
+	return value === root || value.startsWith(`${root}/`);
 }
 
 /**
- * Apply the user's import options to parsed items, and drop duplicate URLs within
- * the batch itself (browsers happily bookmark the same page in two folders).
+ * Apply the user's import options to parsed items — folder scope, collection prefix
+ * and extra tags — and drop repeats within the batch itself, since browsers happily
+ * file one page in two folders.
  */
-export function prepareItems(items: ImportItem[], options: ImportOptions = {}): ImportItem[] {
+export function applyImportOptions(items: ImportItem[], options: ImportOptions = {}): ImportItem[] {
 	const { collectionPrefix, extraTags = [], onlyCollection } = options;
-	const seen = new Set<string>();
+	const seenKeys = new Set<string>();
 	const prepared: ImportItem[] = [];
 
 	for (const item of items) {
-		if (onlyCollection && !withinScope(item.collection, onlyCollection)) continue;
+		if (onlyCollection && !isWithin(item.collection, onlyCollection)) continue;
 		// Same page twice in one file (browsers file a page in two folders): keep the first.
-		const key = strictKey(item.url);
-		if (seen.has(key)) continue;
-		seen.add(key);
+		const key = exactKey(item.url);
+		if (seenKeys.has(key)) continue;
+		seenKeys.add(key);
 
 		prepared.push({
 			...item,

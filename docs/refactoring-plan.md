@@ -8,6 +8,76 @@ over-engineering a single-user local app.
 
 ---
 
+# Round 3 — naming pass and single-responsibility splits
+
+**Status:** ✅ Complete (2026-07-19). `check` (0 errors) + `test` (124 passing) +
+`build` green. Focus: are the names optimal, and does each file/function do one thing?
+
+## Phase 1 — One vocabulary per concept
+
+The same idea currently has two or three names, which is the costliest kind of naming
+problem: the reader has to hold a translation table.
+
+- [x] **`strictKey` / `looseKey` → `exactKey` / `similarKey`.** The result of comparing
+      them is reported everywhere else as `'exact' | 'similar'` (`AddResult.duplicate`,
+      `DuplicateNotice`, the spec). Two vocabularies for one concept.
+- [x] **Three unrelated "normalize"s.** `normalize` (toml.ts, coerces a parsed table),
+      `normalizeFields` (repository, trims strings), `normalizeUrl` (url.ts, adds a
+      missing scheme). → `toBookmark`, `trimFields`, `ensureScheme` — each says what it
+      actually does.
+
+## Phase 2 — Names that misdescribe the thing
+
+- [x] `anchorLines` returns a single string → `anchorLine`.
+- [x] `prepareItems` — "prepare" says nothing → `applyImportOptions`.
+- [x] `updateBookmarkByUrl(url, transform)` sits beside `updateBookmark(url, changes)`;
+      the names suggest a lookup difference when the real difference is what is applied
+      → `transformBookmark`.
+- [x] `walk` (chromeJson) → `collectLinks`, and return a list rather than filling an
+      output parameter.
+- [x] `groupBy` (graph) is too generic for "bookmark ids per attribute" →
+      `bookmarkIdsByAttribute`; `hubsFor` → `buildHubs`.
+- [x] `withinScope` → `isWithin`; `TOKEN` → `TOKEN_PATTERN`; `TRACKING_PARAM` →
+      `TRACKING_PARAM_PATTERN` (both are patterns, and the latter matches many params).
+
+## Phase 3 — Single-letter locals
+
+Cryptic locals in `toml.ts` (`r`, `str`, `t`, `v`, `b`, `doc`, `out`), `filter.ts`
+(`b`, `t`, `f`), `html.ts` (`s`, `n`), `chromeProfile.ts` (`e`), `metadata.ts` (`res`,
+`type`, `og`), `netscape.ts` (`last`, `folders`, `lower`) and `repository.ts`
+(`known`, `loose`, `near`, `possible`).
+
+- [x] Expand to names that say what the value is. Loop variables over an obvious
+      collection (`for (const tag of tags)`) are already fine and stay.
+
+## Phase 4 — Single responsibility
+
+- [x] **`repository.ts` (210 lines) mixes file I/O with domain operations.** Extract
+      `server/store.ts` — `readFromDisk`, `writeToDisk`, `transact` — leaving the
+      repository to express operations on bookmarks.
+- [x] **`netscape.ts` (156 lines) both parses and serializes.** Split into
+      `import/netscape/parse.ts` and `import/netscape/serialize.ts`; the shared format
+      notes go in the directory's index.
+- [x] **`routes/import/+page.svelte` (167 lines)** repeats a card-with-form structure
+      four times → an `ImportCard` component for the shared chrome.
+
+## Outcome
+
+- One vocabulary for duplicates end to end: `exactKey` / `similarKey` now match the
+  `'exact' | 'similar'` outcome that callers, the UI and the spec already used.
+- Three unrelated "normalize"s became `toBookmark`, `trimFields`, `ensureScheme`.
+- `repository.ts` 210 → 178 lines with persistence moved to `store.ts`;
+  `netscape.ts` split into `parse.ts` / `serialize.ts` behind an index that carries the
+  format notes; `import/+page.svelte` 167 → 128 with `ImportCard` and `ImportSummary`.
+- No behavior change: verified add, exact/probable duplicates, merge, 404, a
+  folder-scoped import, export and all three pages after the rename pass.
+
+**Note for future rounds:** BSD `sed` (macOS) does not support `\b` word boundaries,
+so `sed 's/\bfoo\b/bar/'` silently matches nothing. Rename with a real parser or
+Python, and always grep for stragglers afterwards.
+
+---
+
 # Round 2 — after the graph, import/export and dedupe features
 
 **Status:** ✅ Complete (2026-07-19). Review covered 3,135 lines across 45 files.

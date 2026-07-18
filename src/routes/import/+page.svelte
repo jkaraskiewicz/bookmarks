@@ -1,15 +1,17 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { fieldClass, primaryButton, secondaryButton, cardClass } from '$lib/components/ui';
+	import { fieldClass, primaryButton, secondaryButton } from '$lib/components/ui';
 	import ImportOptionFields from '$lib/components/ImportOptionFields.svelte';
+	import ImportCard from '$lib/components/ImportCard.svelte';
+	import ImportSummary from '$lib/components/ImportSummary.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const errorMessage = $derived(form && 'message' in form ? form.message : null);
 	const summary = $derived(form && 'summary' in form ? form.summary : null);
 
-	// Folders that look like a "Bookmark all tabs" drop, surfaced as quick picks.
-	const folderOptions = $derived(data.folders.filter((f) => f.path));
+	// Only named folders are worth offering; the unfiled root is not a choice.
+	const folderOptions = $derived(data.folders.filter((folder) => folder.path));
 </script>
 
 <svelte:head><title>Bookmarks · Import</title></svelte:head>
@@ -25,41 +27,7 @@
 
 	<div class="mx-auto max-w-3xl space-y-6 px-6 py-6">
 		{#if summary}
-			<p
-				class="rounded-md border border-green-800 bg-green-950/40 px-4 py-3 text-sm text-green-300"
-			>
-				Imported <strong>{summary.added}</strong>
-				{summary.added === 1 ? 'bookmark' : 'bookmarks'}.
-				{#if summary.skipped}<span class="text-green-400/70">
-						{summary.skipped} skipped (already bookmarked).</span
-					>{/if}
-				<a href="/" class="underline">View them →</a>
-			</p>
-
-			{#if summary.possibleDuplicates.length}
-				<details
-					class="rounded-md border border-neutral-800 bg-neutral-950/40 px-4 py-3 text-sm text-neutral-300"
-				>
-					<summary class="cursor-pointer">
-						{summary.possibleDuplicates.length} imported bookmark{summary.possibleDuplicates
-							.length === 1
-							? ''
-							: 's'} may duplicate something you already had
-					</summary>
-					<p class="mt-2 text-xs text-neutral-500">
-						These differ only by <code>www</code>, <code>http</code>/<code>https</code> or a trailing
-						slash, so they were imported rather than dropped. Delete either side if it's redundant.
-					</p>
-					<ul class="mt-2 space-y-2">
-						{#each summary.possibleDuplicates as pair (pair.url)}
-							<li class="min-w-0">
-								<span class="block truncate text-neutral-300">＋ {pair.url}</span>
-								<span class="block truncate text-neutral-500">↪ existing: {pair.existing}</span>
-							</li>
-						{/each}
-					</ul>
-				</details>
-			{/if}
+			<ImportSummary {summary} />
 		{/if}
 		{#if errorMessage}
 			<p
@@ -69,14 +37,12 @@
 			</p>
 		{/if}
 
-		<!-- 1. Live Chrome profile -->
-		<section class={cardClass}>
-			<h2 class="font-medium">From Chrome directly</h2>
-			<p class="mt-1 text-sm text-neutral-400">
+		<ImportCard title="From Chrome directly">
+			{#snippet description()}
 				Reads Chrome's bookmarks straight from your profile — no export needed. To grab every open
 				tab first, press <kbd class="rounded bg-neutral-800 px-1.5 py-0.5 text-xs">⇧⌘D</kbd> in Chrome
 				("Bookmark all tabs…"), save them to a new folder, then import just that folder below.
-			</p>
+			{/snippet}
 
 			{#if data.profiles.length}
 				<form method="POST" action="?/profile" class="mt-4 space-y-3">
@@ -94,7 +60,7 @@
 						<input
 							name="onlyCollection"
 							list="chrome-folders"
-							placeholder="e.g. Bookmarks bar/Open tabs 2026-07-19"
+							placeholder="e.g. Bookmarks bar/Open tabs"
 							class="mt-1 {fieldClass}"
 						/>
 					</label>
@@ -112,15 +78,13 @@
 					No Chrome profile found on this machine. Use the file upload below instead.
 				</p>
 			{/if}
-		</section>
+		</ImportCard>
 
-		<!-- 2. Exported HTML file -->
-		<section class={cardClass}>
-			<h2 class="font-medium">From an exported bookmarks file</h2>
-			<p class="mt-1 text-sm text-neutral-400">
+		<ImportCard title="From an exported bookmarks file">
+			{#snippet description()}
 				In Chrome: <code class="text-neutral-300">chrome://bookmarks</code> → ⋮ → Export bookmarks. Firefox,
 				Safari and Edge export the same format.
-			</p>
+			{/snippet}
 
 			<form method="POST" action="?/file" enctype="multipart/form-data" class="mt-4 space-y-3">
 				<input
@@ -132,15 +96,13 @@
 				<ImportOptionFields />
 				<button class={primaryButton} type="submit">Import file</button>
 			</form>
-		</section>
+		</ImportCard>
 
-		<!-- 3. Pasted URLs -->
-		<section class={cardClass}>
-			<h2 class="font-medium">Paste URLs</h2>
-			<p class="mt-1 text-sm text-neutral-400">
+		<ImportCard title="Paste URLs">
+			{#snippet description()}
 				One URL per line, optionally followed by a title. Handy with a "copy all tab URLs"
 				extension.
-			</p>
+			{/snippet}
 
 			<form method="POST" action="?/paste" class="mt-4 space-y-3">
 				<textarea
@@ -151,17 +113,16 @@
 				<ImportOptionFields />
 				<button class={primaryButton} type="submit">Import URLs</button>
 			</form>
-		</section>
+		</ImportCard>
 
-		<!-- Export -->
-		<section class={cardClass}>
-			<h2 class="font-medium">Export</h2>
-			<p class="mt-1 text-sm text-neutral-400">
+		<ImportCard title="Export">
+			{#snippet description()}
 				Download everything as a bookmarks HTML file you can import into any browser.
-			</p>
+			{/snippet}
+
 			<a href="/export" download class="mt-4 inline-block {secondaryButton}"
 				>Download bookmarks.html</a
 			>
-		</section>
+		</ImportCard>
 	</div>
 </div>

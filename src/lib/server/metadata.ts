@@ -15,8 +15,8 @@ function metaContent(html: string, matcher: RegExp): string | undefined {
 
 /** The page title — OpenGraph `og:title` preferred, then `<title>`. */
 function extractTitle(head: string): string | undefined {
-	const og = metaContent(head, /<meta[^>]+property\s*=\s*["']og:title["'][^>]*>/i);
-	if (og) return og;
+	const openGraph = metaContent(head, /<meta[^>]+property\s*=\s*["']og:title["'][^>]*>/i);
+	if (openGraph) return openGraph;
 	const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
 	return title ? decodeEntities(title) : undefined;
 }
@@ -79,16 +79,16 @@ export async function fetchMetadata(url: string): Promise<PageMetadata> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 	try {
-		const res = await fetch(url, {
+		const response = await fetch(url, {
 			signal: controller.signal,
 			redirect: 'follow',
 			headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml' }
 		});
-		if (!res.ok) return {};
-		const type = res.headers.get('content-type') ?? '';
-		if (!type.includes('html')) return {};
-		const html = await res.text();
-		return extractMetadata(html, res.url || url);
+		if (!response.ok) return {};
+		const contentType = response.headers.get('content-type') ?? '';
+		if (!contentType.includes('html')) return {};
+		const html = await response.text();
+		return extractMetadata(html, response.url || url);
 	} catch {
 		return {};
 	} finally {

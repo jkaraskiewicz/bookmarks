@@ -34,12 +34,14 @@ const collectionId = (collection: string) => `c:${collection}`;
  * shows real groupings; bookmarks with no shared attribute appear as lone nodes.
  */
 export function buildGraph(bookmarks: Bookmark[], minShared = 2): Graph {
-	const tagMembers = groupBy(bookmarks, (b) => b.tags);
-	const collectionMembers = groupBy(bookmarks, (b) => (b.collection ? [b.collection] : []));
+	const byTag = bookmarkIdsByAttribute(bookmarks, (bookmark) => bookmark.tags);
+	const byCollection = bookmarkIdsByAttribute(bookmarks, (bookmark) =>
+		bookmark.collection ? [bookmark.collection] : []
+	);
 
-	const tagHubs = hubsFor(tagMembers, 'tag', tagId, (tag) => `#${tag}`, minShared);
-	const collectionHubs = hubsFor(
-		collectionMembers,
+	const tagHubs = buildHubs(byTag, 'tag', tagId, (tag) => `#${tag}`, minShared);
+	const collectionHubs = buildHubs(
+		byCollection,
 		'collection',
 		collectionId,
 		(path) => path,
@@ -56,15 +58,18 @@ export function buildGraph(bookmarks: Bookmark[], minShared = 2): Graph {
 	};
 }
 
-/** Map each attribute of a bookmark to the ids of the bookmarks carrying it. */
-function groupBy(bookmarks: Bookmark[], keysOf: (b: Bookmark) => string[]): Map<string, string[]> {
+/** Index bookmark ids by each attribute value they carry (a tag, or a collection). */
+function bookmarkIdsByAttribute(
+	bookmarks: Bookmark[],
+	attributesOf: (bookmark: Bookmark) => string[]
+): Map<string, string[]> {
 	const members = new Map<string, string[]>();
 
 	for (const bookmark of bookmarks) {
-		for (const key of keysOf(bookmark)) {
-			const ids = members.get(key);
+		for (const attribute of attributesOf(bookmark)) {
+			const ids = members.get(attribute);
 			if (ids) ids.push(bookmarkId(bookmark.url));
-			else members.set(key, [bookmarkId(bookmark.url)]);
+			else members.set(attribute, [bookmarkId(bookmark.url)]);
 		}
 	}
 
@@ -75,7 +80,7 @@ function groupBy(bookmarks: Bookmark[], keysOf: (b: Bookmark) => string[]): Map<
  * Turn each sufficiently-shared attribute into a hub node plus its edges. Attributes
  * held by fewer than `minShared` bookmarks are dropped: they describe no grouping.
  */
-function hubsFor(
+function buildHubs(
 	members: Map<string, string[]>,
 	kind: 'tag' | 'collection',
 	makeId: (key: string) => string,

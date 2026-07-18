@@ -1,4 +1,4 @@
-import { normalizeUrl } from '$lib/url';
+import { ensureScheme } from '$lib/url';
 import type { ImportItem } from './types';
 
 /**
@@ -16,7 +16,7 @@ export function parseUrlList(text: string): ImportItem[] {
 		const [, urlPart, titlePart] = /^(\S+)(?:\s+(.*))?$/.exec(line) ?? [];
 		if (!urlPart) continue;
 
-		const url = normalizeUrl(urlPart);
+		const url = ensureScheme(urlPart);
 		if (!/^https?:\/\//i.test(url)) continue;
 
 		items.push({ url, title: titlePart?.trim() || undefined, tags: [] });

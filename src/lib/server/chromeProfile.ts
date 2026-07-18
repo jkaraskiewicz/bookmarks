@@ -51,7 +51,7 @@ export async function listChromeProfiles(): Promise<ChromeProfile[]> {
 		return []; // no Chrome on this machine
 	}
 
-	const candidates = entries.filter((e) => e === 'Default' || /^Profile \d+$/.test(e));
+	const candidates = entries.filter((entry) => entry === 'Default' || /^Profile \d+$/.test(entry));
 	const profiles: ChromeProfile[] = [];
 
 	for (const dir of candidates) {

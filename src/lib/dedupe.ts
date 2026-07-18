@@ -1,16 +1,17 @@
 /**
  * Duplicate detection.
  *
- * Two keys, deliberately: a *strict* key for differences that are certainly the
- * same page (merged silently), and a *loose* key for differences that are usually
- * but not always the same page (surfaced as a warning, never merged on our own).
+ * Two keys, deliberately. An *exact* key covers differences that certainly mean the
+ * same page (merged silently); a *similar* key also folds differences that usually
+ * but not always mean the same page (surfaced as a warning, never merged on our own).
+ * The names match the `'exact' | 'similar'` outcome reported to callers.
  *
  * The stored URL is never rewritten — keys are derived on demand, so the TOML stays
  * exactly as you typed it and these rules can change later without a migration.
  */
 
 /** Query parameters that only ever carry analytics, never page identity. */
-const TRACKING_PARAM =
+const TRACKING_PARAM_PATTERN =
 	/^(utm_|fbclid$|gclid$|dclid$|msclkid$|mc_eid$|mc_cid$|igshid$|ref_src$|spm$|_hsenc$|_hsmi$|vero_id$|yclid$)/i;
 
 /**
@@ -22,10 +23,10 @@ function isRouteFragment(hash: string): boolean {
 }
 
 /**
- * Strict key: same key ⇒ certainly the same page. Normalizes case, default ports,
- * decorative fragments, empty paths and tracking parameters.
+ * Same key ⇒ certainly the same page. Folds case, default ports, decorative
+ * fragments, empty paths and tracking parameters.
  */
-export function strictKey(url: string): string {
+export function exactKey(url: string): string {
 	let parsed: URL;
 	try {
 		parsed = new URL(url);
@@ -37,7 +38,7 @@ export function strictKey(url: string): string {
 	const host = parsed.hostname.toLowerCase();
 	const port = parsed.port && !isDefaultPort(scheme, parsed.port) ? `:${parsed.port}` : '';
 
-	const params = [...parsed.searchParams].filter(([key]) => !TRACKING_PARAM.test(key));
+	const params = [...parsed.searchParams].filter(([key]) => !TRACKING_PARAM_PATTERN.test(key));
 	params.sort(([a], [b]) => a.localeCompare(b));
 	const query = params.length ? `?${new URLSearchParams(params)}` : '';
 
@@ -52,12 +53,11 @@ function isDefaultPort(scheme: string, port: string): boolean {
 }
 
 /**
- * Loose key: same key ⇒ *probably* the same page. Everything the strict key does,
- * plus folding http/https, www, and a trailing slash. Used only to warn.
+ * Same key ⇒ *probably* the same page. Everything {@link exactKey} folds, plus
+ * http/https, www, and a trailing slash. Used only to warn, never to merge.
  */
-export function looseKey(url: string): string {
-	const strict = strictKey(url);
-	return strict
+export function similarKey(url: string): string {
+	return exactKey(url)
 		.replace(/^https?:\/\//, '')
 		.replace(/^www\./, '')
 		.replace(/\/+$/, '');
@@ -71,24 +71,24 @@ export interface DuplicateMatch<T> {
 }
 
 /**
- * Find an existing item matching `url`. An exact (strict) match wins; otherwise a
- * loose match is reported as `similar`. `ignore` skips one item, so editing a
- * bookmark doesn't flag it as a duplicate of itself.
+ * Find an existing item matching `url`. An exact match wins; otherwise a probable
+ * one is reported as `similar`. `ignore` skips one item, so editing a bookmark
+ * doesn't flag it as a duplicate of itself.
  */
 export function findDuplicate<T extends { url: string }>(
 	items: T[],
 	url: string,
 	ignore?: string
 ): DuplicateMatch<T> {
-	const strict = strictKey(url);
-	const loose = looseKey(url);
-	let similar: T | undefined;
+	const exact = exactKey(url);
+	const similar = similarKey(url);
+	let similarMatch: T | undefined;
 
 	for (const item of items) {
 		if (ignore !== undefined && item.url === ignore) continue;
-		if (strictKey(item.url) === strict) return { exact: item };
-		if (!similar && looseKey(item.url) === loose) similar = item;
+		if (exactKey(item.url) === exact) return { exact: item };
+		if (!similarMatch && similarKey(item.url) === similar) similarMatch = item;
 	}
 
-	return similar ? { similar } : {};
+	return similarMatch ? { similar: similarMatch } : {};
 }

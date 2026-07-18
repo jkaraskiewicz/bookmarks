@@ -12,22 +12,23 @@ export interface BookmarkFilter {
 
 function matchesSearch(bookmark: Bookmark, query: string): boolean {
 	if (!query) return true;
-	const fields = [bookmark.title, bookmark.url, bookmark.notes, bookmark.description];
-	return fields.some((f) => f?.toLowerCase().includes(query));
+	const haystack = [bookmark.title, bookmark.url, bookmark.notes, bookmark.description];
+	return haystack.some((field) => field?.toLowerCase().includes(query));
 }
 
 /** Filter bookmarks by search text, required tags, and selected collection. */
 export function filterBookmarks(bookmarks: Bookmark[], filter: BookmarkFilter): Bookmark[] {
 	const query = filter.search.trim().toLowerCase();
 	return bookmarks.filter(
-		(b) =>
-			matchesSearch(b, query) &&
-			filter.tags.every((t) => b.tags.includes(t)) &&
-			inCollection(b.collection, filter.collection)
+		(bookmark) =>
+			matchesSearch(bookmark, query) &&
+			filter.tags.every((tag) => bookmark.tags.includes(tag)) &&
+			inCollection(bookmark.collection, filter.collection)
 	);
 }
 
 /** Every distinct tag across the given bookmarks, sorted. */
 export function allTags(bookmarks: Bookmark[]): string[] {
-	return [...new Set(bookmarks.flatMap((b) => b.tags))].sort((a, b) => a.localeCompare(b));
+	const unique = new Set(bookmarks.flatMap((bookmark) => bookmark.tags));
+	return [...unique].sort((a, b) => a.localeCompare(b));
 }

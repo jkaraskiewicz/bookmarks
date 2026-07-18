@@ -1,46 +1,14 @@
-import { dirname } from 'node:path';
-import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import type { Bookmark, NewBookmark } from '$lib/types';
 import type { ImportItem, ImportSummary } from '$lib/import/types';
-import { normalizeUrl } from '$lib/url';
-import { findDuplicate, strictKey, looseKey } from '$lib/dedupe';
-import { parseBookmarks, serializeBookmarks } from './toml';
-import { bookmarksFile } from './config';
-import { createMutex } from './mutex';
+import { ensureScheme } from '$lib/url';
+import { findDuplicate, exactKey, similarKey } from '$lib/dedupe';
+import { readFromDisk, transact } from './store';
 import { invalid, conflict, notFound } from './errors';
 
-const lock = createMutex();
-
-async function readFromDisk(): Promise<Bookmark[]> {
-	try {
-		return parseBookmarks(await readFile(bookmarksFile(), 'utf-8'));
-	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
-		throw err;
-	}
-}
-
-async function writeToDisk(bookmarks: Bookmark[]): Promise<void> {
-	const path = bookmarksFile();
-	await mkdir(dirname(path), { recursive: true });
-	const tmp = `${path}.tmp`;
-	await writeFile(tmp, serializeBookmarks(bookmarks), 'utf-8');
-	await rename(tmp, path); // atomic replace
-}
-
 /**
- * Run a read-modify-write transaction under the write lock. The mutator receives
- * the current list and returns the `next` list to persist (omit to skip writing)
- * plus a `result` to return to the caller.
+ * Operations on the bookmark library. Persistence lives in `store.ts`; this module
+ * is about what those operations mean — identity, duplicates, and field handling.
  */
-function transact<T>(mutate: (list: Bookmark[]) => { next?: Bookmark[]; result: T }): Promise<T> {
-	return lock(async () => {
-		const list = await readFromDisk();
-		const { next, result } = mutate(list);
-		if (next) await writeToDisk(next);
-		return result;
-	});
-}
 
 /** Read all bookmarks, newest first. Reads fresh from disk every time. */
 export async function readBookmarks(): Promise<Bookmark[]> {
@@ -49,7 +17,7 @@ export async function readBookmarks(): Promise<Bookmark[]> {
 }
 
 /** Trim user-supplied fields; `undefined` means "not provided" (keep existing on update). */
-function normalizeFields(input: NewBookmark) {
+function trimFields(input: NewBookmark) {
 	return {
 		title: input.title?.trim() || undefined,
 		tags: input.tags?.map((t) => t.trim()).filter(Boolean),
@@ -63,7 +31,7 @@ function normalizeFields(input: NewBookmark) {
  * the date the bookmark was originally created; otherwise it is created now.
  */
 function buildBookmark(url: string, input: NewBookmark, added?: string): Bookmark {
-	const fields = normalizeFields(input);
+	const fields = trimFields(input);
 	return {
 		url,
 		title: fields.title ?? url,
@@ -89,7 +57,7 @@ export interface AddResult {
  */
 export function addBookmark(input: NewBookmark, force = false): Promise<AddResult> {
 	return transact<AddResult>((list) => {
-		const url = normalizeUrl(input.url);
+		const url = ensureScheme(input.url);
 		if (!url) throw invalid('A URL is required.');
 
 		const { exact, similar } = findDuplicate(list, url);
@@ -108,8 +76,8 @@ export function addBookmark(input: NewBookmark, force = false): Promise<AddResul
  * tags to it" path when someone re-adds a URL they already have.
  */
 export function mergeIntoBookmark(url: string, input: NewBookmark): Promise<Bookmark | null> {
-	const fields = normalizeFields(input);
-	return updateBookmarkByUrl(url, (current) => ({
+	const fields = trimFields(input);
+	return transformBookmark(url, (current) => ({
 		...current,
 		tags: [...new Set([...current.tags, ...(fields.tags ?? [])])],
 		notes: [current.notes, fields.notes].filter(Boolean).join('\n') || undefined
@@ -123,33 +91,33 @@ export function mergeIntoBookmark(url: string, input: NewBookmark): Promise<Book
  */
 export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
 	return transact((list) => {
-		const known = new Map(list.map((b) => [strictKey(b.url), b]));
-		const loose = new Map(list.map((b) => [looseKey(b.url), b]));
+		const byExactKey = new Map(list.map((existing) => [exactKey(existing.url), existing]));
+		const bySimilarKey = new Map(list.map((existing) => [similarKey(existing.url), existing]));
 		const created: Bookmark[] = [];
-		const possible: ImportSummary['possibleDuplicates'] = [];
+		const possibleDuplicates: ImportSummary['possibleDuplicates'] = [];
 
 		for (const item of items) {
-			const url = normalizeUrl(item.url);
+			const url = ensureScheme(item.url);
 			if (!url) continue;
 
 			// Certainly already here: skip quietly.
-			if (known.has(strictKey(url))) continue;
+			if (byExactKey.has(exactKey(url))) continue;
 
 			// Probably already here: import it anyway, but report it — silently
 			// dropping a bookmark on a guess is worse than keeping a duplicate.
-			const near = loose.get(looseKey(url));
-			if (near) possible.push({ url, existing: near.url });
+			const similar = bySimilarKey.get(similarKey(url));
+			if (similar) possibleDuplicates.push({ url, existing: similar.url });
 
 			const bookmark = buildBookmark(url, item, item.added);
 			created.push(bookmark);
-			known.set(strictKey(url), bookmark);
-			if (!near) loose.set(looseKey(url), bookmark);
+			byExactKey.set(exactKey(url), bookmark);
+			if (!similar) bySimilarKey.set(similarKey(url), bookmark);
 		}
 
 		const summary: ImportSummary = {
 			added: created.length,
 			skipped: items.length - created.length,
-			possibleDuplicates: possible
+			possibleDuplicates
 		};
 		return { next: created.length ? [...created, ...list] : undefined, result: summary };
 	});
@@ -166,12 +134,12 @@ export function updateBookmark(originalUrl: string, changes: NewBookmark): Promi
 		if (idx === -1) throw notFound();
 
 		const current = list[idx];
-		const nextUrl = normalizeUrl(changes.url) || current.url;
+		const nextUrl = ensureScheme(changes.url) || current.url;
 		if (findDuplicate(list, nextUrl, originalUrl).exact) {
 			throw conflict('Another bookmark already uses that URL.');
 		}
 
-		const fields = normalizeFields(changes);
+		const fields = trimFields(changes);
 		const updated: Bookmark = {
 			...current,
 			url: nextUrl,
@@ -194,8 +162,8 @@ export function deleteBookmark(url: string): Promise<void> {
 	});
 }
 
-/** Apply a transformation to one bookmark (by URL) and persist it. Null if not found. */
-export function updateBookmarkByUrl(
+/** Apply a function to one bookmark and persist the result. Null if not found. */
+export function transformBookmark(
 	url: string,
 	transform: (bookmark: Bookmark) => Bookmark
 ): Promise<Bookmark | null> {

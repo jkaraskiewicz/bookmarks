@@ -4,7 +4,7 @@ import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { parseNetscape } from '$lib/import/netscape';
 import { parseChromeBookmarks, folderCounts } from '$lib/import/chromeJson';
 import { parseUrlList } from '$lib/import/urlList';
-import { prepareItems, type ImportOptions } from '$lib/import/prepare';
+import { applyImportOptions, type ImportOptions } from '$lib/import/prepare';
 import { splitList } from '$lib/tags';
 import { addBookmarks } from '$lib/server/repository';
 import { listChromeProfiles, readChromeBookmarksJson } from '$lib/server/chromeProfile';
@@ -23,7 +23,7 @@ function readOptions(form: FormData): ImportOptions {
 
 /** Shared tail of every import action: prepare, persist, kick off enrichment. */
 async function runImport(items: ImportItem[], options: ImportOptions) {
-	const prepared = prepareItems(items, options);
+	const prepared = applyImportOptions(items, options);
 	if (prepared.length === 0) {
 		return fail(400, { message: 'Nothing to import — no usable bookmarks found.' });
 	}

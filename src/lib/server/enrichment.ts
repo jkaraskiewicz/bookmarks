@@ -1,6 +1,6 @@
 import type { Bookmark, PageMetadata } from '$lib/types';
 import { fetchMetadata } from './metadata';
-import { updateBookmarkByUrl } from './repository';
+import { transformBookmark } from './repository';
 
 /** Apply fetched metadata to a bookmark, filling gaps without clobbering user data. */
 function applyMetadata(bookmark: Bookmark, meta: PageMetadata): Bookmark {
@@ -19,7 +19,7 @@ function applyMetadata(bookmark: Bookmark, meta: PageMetadata): Bookmark {
  */
 export async function refreshMetadata(url: string): Promise<Bookmark | null> {
 	const meta = await fetchMetadata(url);
-	return updateBookmarkByUrl(url, (bookmark) => applyMetadata(bookmark, meta));
+	return transformBookmark(url, (bookmark) => applyMetadata(bookmark, meta));
 }
 
 // --- background enrichment registry ------------------------------------------

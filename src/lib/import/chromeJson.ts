@@ -32,22 +32,23 @@ function isoFromChromeTime(raw: string | undefined): string | undefined {
 	return ms > 0 ? new Date(ms).toISOString() : undefined;
 }
 
-/** Walk a folder subtree, accumulating links with their `/`-joined folder path. */
-function walk(node: ChromeNode, path: string[], items: ImportItem[]): void {
+/** Collect the links in a folder subtree, tagged with their `/`-joined folder path. */
+function collectLinks(node: ChromeNode, path: string[]): ImportItem[] {
 	if (node.type === 'url' || node.url) {
-		if (!node.url || !/^https?:\/\//i.test(node.url)) return;
-		items.push({
-			url: node.url,
-			title: node.name?.trim() || undefined,
-			tags: [],
-			collection: path.filter(Boolean).join('/') || undefined,
-			added: isoFromChromeTime(node.date_added)
-		});
-		return;
+		if (!node.url || !/^https?:\/\//i.test(node.url)) return [];
+		return [
+			{
+				url: node.url,
+				title: node.name?.trim() || undefined,
+				tags: [],
+				collection: path.filter(Boolean).join('/') || undefined,
+				added: isoFromChromeTime(node.date_added)
+			}
+		];
 	}
-	for (const child of node.children ?? []) {
-		walk(child, [...path, node.name ?? ''], items);
-	}
+
+	const childPath = [...path, node.name ?? ''];
+	return (node.children ?? []).flatMap((child) => collectLinks(child, childPath));
 }
 
 /** The folder roots Chrome always defines, in the order we present them. */
@@ -62,13 +63,13 @@ const ROOT_LABELS: Record<string, string> = {
  * top-level roots are read (defaults to all of them).
  */
 export function parseChromeBookmarks(json: string, rootKeys?: string[]): ImportItem[] {
-	const data = JSON.parse(json) as ChromeBookmarksFile;
+	const file = JSON.parse(json) as ChromeBookmarksFile;
 	const items: ImportItem[] = [];
 
-	for (const [key, root] of Object.entries(data.roots ?? {})) {
+	for (const [key, root] of Object.entries(file.roots ?? {})) {
 		if (rootKeys && !rootKeys.includes(key)) continue;
 		if (!root || typeof root !== 'object') continue;
-		walk({ ...root, name: root.name || ROOT_LABELS[key] || key }, [], items);
+		items.push(...collectLinks({ ...root, name: root.name || ROOT_LABELS[key] || key }, []));
 	}
 
 	return items;

@@ -8,67 +8,71 @@ const HEADER = `# bookmarks.toml — your bookmarks, one [[bookmark]] block each
 
 `;
 
-/** Coerce an arbitrary parsed TOML table into a well-formed Bookmark. */
-function normalize(raw: unknown): Bookmark | null {
+/** Coerce one parsed TOML table into a well-formed Bookmark, or null if unusable. */
+function toBookmark(raw: unknown): Bookmark | null {
 	if (typeof raw !== 'object' || raw === null) return null;
-	const r = raw as Record<string, unknown>;
+	const table = raw as Record<string, unknown>;
 
-	const url = typeof r.url === 'string' ? r.url.trim() : '';
+	const url = typeof table.url === 'string' ? table.url.trim() : '';
 	if (!url) return null; // a bookmark without a URL is meaningless
-
-	const tags = Array.isArray(r.tags)
-		? r.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim())
-		: [];
-
-	const str = (v: unknown): string | undefined => {
-		if (typeof v !== 'string') return undefined;
-		const t = v.trim();
-		return t.length > 0 ? t : undefined;
-	};
-
-	// TOML datetimes parse to Date; also accept an ISO string. Fall back to now.
-	let added: string;
-	if (r.added instanceof Date) added = r.added.toISOString();
-	else if (typeof r.added === 'string' && !Number.isNaN(Date.parse(r.added)))
-		added = new Date(r.added).toISOString();
-	else added = new Date().toISOString();
 
 	return {
 		url,
-		title: str(r.title) ?? url,
-		tags,
-		collection: str(r.collection),
-		notes: str(r.notes),
-		description: str(r.description),
-		favicon: str(r.favicon),
-		added
+		title: trimmedText(table.title) ?? url,
+		tags: trimmedTags(table.tags),
+		collection: trimmedText(table.collection),
+		notes: trimmedText(table.notes),
+		description: trimmedText(table.description),
+		favicon: trimmedText(table.favicon),
+		added: addedTimestamp(table.added)
 	};
+}
+
+/** A trimmed string, or undefined if the value is not a string or is blank. */
+function trimmedText(value: unknown): string | undefined {
+	if (typeof value !== 'string') return undefined;
+	return value.trim() || undefined;
+}
+
+/** Trimmed string entries of a tag array; anything else yields no tags. */
+function trimmedTags(value: unknown): string[] {
+	if (!Array.isArray(value)) return [];
+	return value.filter((tag) => typeof tag === 'string').map((tag) => tag.trim());
+}
+
+/** TOML datetimes parse to Date; an ISO string is accepted too. Falls back to now. */
+function addedTimestamp(value: unknown): string {
+	if (value instanceof Date) return value.toISOString();
+	if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) {
+		return new Date(value).toISOString();
+	}
+	return new Date().toISOString();
 }
 
 /** Parse the raw contents of a bookmarks.toml file into normalized bookmarks. */
 export function parseBookmarks(raw: string): Bookmark[] {
-	const data = parse(raw) as { bookmark?: unknown };
-	const list = Array.isArray(data.bookmark) ? data.bookmark : [];
-	return list.map(normalize).filter((b): b is Bookmark => b !== null);
+	const document = parse(raw) as { bookmark?: unknown };
+	const tables = Array.isArray(document.bookmark) ? document.bookmark : [];
+	return tables.map(toBookmark).filter((bookmark) => bookmark !== null);
 }
 
 /** Serialize bookmarks back into TOML text, with a friendly header. */
 export function serializeBookmarks(bookmarks: Bookmark[]): string {
-	const doc = {
-		bookmark: bookmarks.map((b) => {
-			// Insertion order here controls field order in the file.
-			const out: Record<string, unknown> = {
-				title: b.title,
-				url: b.url,
-				tags: b.tags
-			};
-			if (b.collection) out.collection = b.collection;
-			if (b.notes) out.notes = b.notes;
-			if (b.description) out.description = b.description;
-			if (b.favicon) out.favicon = b.favicon;
-			out.added = new Date(b.added);
-			return out;
-		})
+	const document = { bookmark: bookmarks.map(toTable) };
+	return HEADER + stringify(document) + '\n';
+}
+
+/** One bookmark as a TOML table. Insertion order sets the field order in the file. */
+function toTable(bookmark: Bookmark): Record<string, unknown> {
+	const table: Record<string, unknown> = {
+		title: bookmark.title,
+		url: bookmark.url,
+		tags: bookmark.tags
 	};
-	return HEADER + stringify(doc) + '\n';
+	if (bookmark.collection) table.collection = bookmark.collection;
+	if (bookmark.notes) table.notes = bookmark.notes;
+	if (bookmark.description) table.description = bookmark.description;
+	if (bookmark.favicon) table.favicon = bookmark.favicon;
+	table.added = new Date(bookmark.added);
+	return table;
 }

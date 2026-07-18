@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { strictKey, looseKey, findDuplicate } from './dedupe';
+import { exactKey, similarKey, findDuplicate } from './dedupe';
 
 /** Two URLs the app may merge without asking. */
-const same = (a: string, b: string) => expect(strictKey(a)).toBe(strictKey(b));
+const same = (a: string, b: string) => expect(exactKey(a)).toBe(exactKey(b));
 /** Two URLs the app must keep apart. */
-const differ = (a: string, b: string) => expect(strictKey(a)).not.toBe(strictKey(b));
+const differ = (a: string, b: string) => expect(exactKey(a)).not.toBe(exactKey(b));
 
-describe('strictKey — certainly the same page', () => {
+describe('exactKey — certainly the same page', () => {
 	it('ignores host and scheme capitalization', () => {
 		same('https://NBA.com/news', 'https://nba.com/news');
 	});
@@ -34,7 +34,7 @@ describe('strictKey — certainly the same page', () => {
 	});
 });
 
-describe('strictKey — must stay distinct', () => {
+describe('exactKey — must stay distinct', () => {
 	it('keeps meaningful query parameters', () => {
 		// Regression: these are two different YouTube videos, not one page.
 		differ('https://youtube.com/watch?v=Q5cTT0M0YXg', 'https://youtube.com/watch?v=8e3I-PYJNHg');
@@ -60,20 +60,20 @@ describe('strictKey — must stay distinct', () => {
 	});
 
 	it('falls back to plain comparison for unparseable input', () => {
-		expect(strictKey('not a url')).toBe('not a url');
-		expect(strictKey('  NOT A URL  ')).toBe('not a url');
+		expect(exactKey('not a url')).toBe('not a url');
+		expect(exactKey('  NOT A URL  ')).toBe('not a url');
 	});
 });
 
-describe('looseKey — probably the same page', () => {
+describe('similarKey — probably the same page', () => {
 	it('folds www, scheme and trailing slash together', () => {
-		const key = looseKey('https://www.nba.com/news/');
-		expect(looseKey('http://nba.com/news')).toBe(key);
-		expect(looseKey('https://nba.com/news')).toBe(key);
+		const key = similarKey('https://www.nba.com/news/');
+		expect(similarKey('http://nba.com/news')).toBe(key);
+		expect(similarKey('https://nba.com/news')).toBe(key);
 	});
 
 	it('still keeps genuinely different pages apart', () => {
-		expect(looseKey('https://nba.com/news')).not.toBe(looseKey('https://nba.com/scores'));
+		expect(similarKey('https://nba.com/news')).not.toBe(similarKey('https://nba.com/scores'));
 	});
 });
 

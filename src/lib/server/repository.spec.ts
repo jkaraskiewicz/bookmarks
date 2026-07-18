@@ -15,7 +15,7 @@ const {
 	updateBookmark,
 	deleteBookmark,
 	mergeIntoBookmark,
-	updateBookmarkByUrl
+	transformBookmark
 } = await import('./repository');
 const { DomainError } = await import('./errors');
 
@@ -221,15 +221,15 @@ describe('deleteBookmark', () => {
 	});
 });
 
-describe('updateBookmarkByUrl', () => {
+describe('transformBookmark', () => {
 	it('applies a transformation', async () => {
 		await addBookmark({ url: 'https://a.dev' });
-		const updated = await updateBookmarkByUrl('https://a.dev', (b) => ({ ...b, favicon: 'i.png' }));
+		const updated = await transformBookmark('https://a.dev', (b) => ({ ...b, favicon: 'i.png' }));
 		expect(updated?.favicon).toBe('i.png');
 	});
 
 	it('returns null when the bookmark is gone', async () => {
-		expect(await updateBookmarkByUrl('https://nope.dev', (b) => b)).toBeNull();
+		expect(await transformBookmark('https://nope.dev', (b) => b)).toBeNull();
 	});
 });
 

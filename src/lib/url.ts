@@ -7,8 +7,8 @@ export function hostname(url: string): string {
 	}
 }
 
-/** Normalize a user-entered URL: trim and ensure a scheme is present. '' stays ''. */
-export function normalizeUrl(input: string): string {
+/** Trim a user-entered URL and add `https://` when no scheme is given. '' stays ''. */
+export function ensureScheme(input: string): string {
 	const url = input.trim();
 	if (!url) return '';
 	return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
