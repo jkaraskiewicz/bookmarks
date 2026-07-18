@@ -4,7 +4,8 @@
 	import '@xyflow/svelte/dist/style.css';
 	import type { Bookmark } from '$lib/types';
 	import { buildGraph } from '$lib/graph';
-	import { layoutGraph, type Point } from '$lib/graphLayout';
+	import { edgeStyle, edgeLabel } from '$lib/graph/edgeStyle';
+	import { layoutGraph, type Point } from '$lib/graph/layout';
 	import BookmarkNode from './nodes/BookmarkNode.svelte';
 	import HubNode from './nodes/HubNode.svelte';
 	import GraphLegend from './GraphLegend.svelte';
@@ -17,8 +18,8 @@
 	let expanded = $state(new SvelteSet<string>());
 	/** Where the user dragged things; these positions survive every relayout. */
 	let pinned = new Map<string, Point>();
-	/** Last computed positions, so opening a hub grows the map instead of reshuffling it. */
-	let positions = new Map<string, Point>();
+	/** Where everything sat last time, so opening a hub grows the map rather than reshuffling it. */
+	let lastPositions = new Map<string, Point>();
 
 	let nodes = $state.raw<Node[]>([]);
 	let edges = $state.raw<Edge[]>([]);
@@ -26,26 +27,20 @@
 	// Re-render whenever the bookmarks, the open hubs, or the search change.
 	$effect(() => {
 		const graph = buildGraph(bookmarks, { expanded, search });
-		positions = layoutGraph(graph, { previous: positions, pinned });
+		lastPositions = layoutGraph(graph, { previous: lastPositions, pinned });
 
 		nodes = graph.nodes.map((node) => ({
 			id: node.id,
 			type: node.kind,
-			position: positions.get(node.id) ?? { x: 0, y: 0 },
+			position: lastPositions.get(node.id) ?? { x: 0, y: 0 },
 			data: { ...node }
 		}));
 		edges = graph.edges.map((edge) => ({
 			id: edge.id,
 			source: edge.source,
 			target: edge.target,
-			// Affinity edges summarize hidden overlap, so they read as a hint rather
-			// than a fact: dashed, and fainter the weaker the overlap.
-			animated: false,
-			style:
-				edge.kind === 'affinity'
-					? `stroke-dasharray: 4 4; opacity: ${(0.18 + (edge.strength ?? 0) * 0.42).toFixed(2)}; stroke-width: ${(0.8 + (edge.strength ?? 0) * 1.6).toFixed(2)}`
-					: 'opacity: 0.55',
-			label: edge.kind === 'affinity' && (edge.shared ?? 0) >= 3 ? String(edge.shared) : undefined
+			style: edgeStyle(edge),
+			label: edgeLabel(edge)
 		}));
 	});
 
@@ -60,13 +55,13 @@
 	function pinNode({ targetNode }: { targetNode: Node | null }) {
 		if (!targetNode) return;
 		pinned.set(targetNode.id, { ...targetNode.position });
-		positions.set(targetNode.id, { ...targetNode.position });
+		lastPositions.set(targetNode.id, { ...targetNode.position });
 	}
 
 	function collapseAll() {
 		expanded = new SvelteSet<string>();
 		pinned = new Map();
-		positions = new Map();
+		lastPositions = new Map();
 	}
 </script>
 

@@ -8,6 +8,82 @@ over-engineering a single-user local app.
 
 ---
 
+# Round 4 — after the graph rework
+
+**Status:** ✅ Complete (2026-07-19). `check` (0 errors) + `test` (145 passing) +
+`build` green. The graph rework grew `graph.ts` from 119 to 310 lines and introduced a
+new vocabulary (hubs, affinity, membership); this round tidies it.
+
+## Phase 1 — Split `graph.ts` (310 lines, three responsibilities)
+
+- [x] Building hubs (collections, tags, membership sets)
+- [x] Computing affinity (co-occurrence, thresholds, ancestor filtering)
+- [x] Assembling the graph (`buildGraph`)
+      → `graph/hubs.ts`, `graph/affinity.ts`, `graph/index.ts`, mirroring the
+      `netscape/` split from Round 3.
+
+## Phase 2 — Stop decoding node ids by hand
+
+`keepMostSpecific` reaches into the id encoding with `id.startsWith('c:')` (4×) and
+`id.slice(2)` (2×). The encoding is defined in one place (`collectionId`) but taken
+apart ad-hoc with a magic offset — change the prefix and this breaks silently.
+
+- [x] Compute affinity over hub **nodes**, which already carry `kind`, instead of
+      re-deriving kind from the id string.
+- [x] Where an id genuinely must be inspected, add `isCollectionId` / `collectionPath`
+      next to the constructors, so encoding and decoding live together.
+
+## Phase 3 — Visual tuning constants and edge styling
+
+Magic numbers for how strongly affinity reads are spread across two files: `230`,
+`110`, `0.15`, `0.55` in the layout; `0.18`, `0.42`, `0.8`, `1.6` and a label
+threshold inline in `GraphView`'s template strings.
+
+- [x] Name them where they belong.
+- [x] Move edge styling out of the component into `graphEdgeStyle.ts` — a pure
+      function is easier to read and to change than an interpolated template string
+      inside a `.map`.
+
+## Phase 4 — DRY and SLAP
+
+- [x] `keepMostSpecific` destructures partner/collection identically twice.
+- [x] `tagHubs` returns `{ nodes }` — a one-key wrapper for no reason, while
+      `collectionHubs` returns `{ nodes, edges }`. Return `GraphNode[]`.
+- [x] `buildGraph` decides what to reveal, emits nodes, emits edges and orders the
+      result. Extract the reveal pass.
+
+## Phase 5 — Names
+
+- [x] `hubMembership` → `bookmarksByHub` (says what the map holds)
+- [x] `keepMostSpecific` → `withoutRedundantAncestors`
+- [x] `totals` → `nestedCounts`
+
+## Outcome
+
+`graph.ts` (310 lines) became a module of focused files:
+
+| file                 | lines | responsibility                             |
+| -------------------- | ----- | ------------------------------------------ |
+| `graph/types.ts`     | 77    | shapes, id construction **and** inspection |
+| `graph/hubs.ts`      | 106   | collections, tags, membership              |
+| `graph/affinity.ts`  | 106   | overlap, thresholds, ancestor filtering    |
+| `graph/index.ts`     | 83    | assembly (`buildGraph`)                    |
+| `graph/edgeStyle.ts` | 37    | how an edge reads on the canvas            |
+| `graph/layout.ts`    | 146   | force simulation (moved in from `$lib/`)   |
+
+Id decoding is now confined to `types.ts`; a grep for `startsWith('c:')` or `slice(2)`
+anywhere else returns nothing, tests included.
+
+Behaviour verified unchanged rather than assumed: the same 12 affinity edges on the
+multi-tag fixture (identical pairs, pre- and post-refactor), 17 hubs at rest on a
+~360-bookmark library, 64ms to expand, and neighbouring nodes shifting only 44px when
+a second hub opens.
+
+**Self-inflicted duplication caught during the round:** splitting `graph.spec.ts` in
+two copied the fixture library into both halves. Extracted to `graph/fixtures.ts`.
+
+---
+
 # Round 3 — naming pass and single-responsibility splits
 
 **Status:** ✅ Complete (2026-07-19). `check` (0 errors) + `test` (124 passing) +

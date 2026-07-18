@@ -8,7 +8,7 @@ import {
 	forceY,
 	type SimulationNodeDatum
 } from 'd3-force';
-import type { Graph } from './graph';
+import type { Graph } from './types';
 
 interface SimNode extends SimulationNodeDatum {
 	id: string;
@@ -26,6 +26,17 @@ export interface LayoutOptions {
 	/** Nodes the user has dragged; these stay exactly where they were put. */
 	pinned?: ReadonlyMap<string, Point>;
 }
+
+/** A total overlap sits this close; no overlap this far apart. */
+const AFFINITY_DISTANCE = { tight: 120, loose: 230 };
+/** How hard an affinity link pulls, from a bare-threshold overlap to a total one. */
+const AFFINITY_PULL = { weak: 0.15, strong: 0.7 };
+
+const affinityDistance = (strength: number) =>
+	AFFINITY_DISTANCE.loose - (AFFINITY_DISTANCE.loose - AFFINITY_DISTANCE.tight) * strength;
+
+const affinityPull = (strength: number) =>
+	AFFINITY_PULL.weak + (AFFINITY_PULL.strong - AFFINITY_PULL.weak) * strength;
 
 /** d3 replaces link endpoints with node objects once the simulation is initialized. */
 function isHubEnd(end: string | SimNode): boolean {
@@ -76,8 +87,8 @@ export function layoutGraph(graph: Graph, options: LayoutOptions = {}): Map<stri
 	const links = graph.edges.map((edge) => ({
 		source: edge.source,
 		target: edge.target,
-		distance: edge.kind === 'affinity' ? 230 - (edge.strength ?? 0) * 110 : undefined,
-		pull: edge.kind === 'affinity' ? 0.15 + (edge.strength ?? 0) * 0.55 : undefined
+		distance: edge.kind === 'affinity' ? affinityDistance(edge.strength ?? 0) : undefined,
+		pull: edge.kind === 'affinity' ? affinityPull(edge.strength ?? 0) : undefined
 	}));
 
 	const simulation = forceSimulation(nodes)
