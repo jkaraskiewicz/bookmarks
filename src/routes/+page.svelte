@@ -53,6 +53,11 @@
 		<div class="mx-auto flex max-w-5xl items-start gap-4">
 			<div class="min-w-0 flex-1"><AddBar /></div>
 			<ViewToggle />
+			<a
+				href="/import"
+				class="shrink-0 rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+				title="Import & export bookmarks">Import</a
+			>
 		</div>
 		{#if errorMessage}
 			<p class="mx-auto mt-2 max-w-5xl text-sm text-amber-400">{errorMessage}</p>

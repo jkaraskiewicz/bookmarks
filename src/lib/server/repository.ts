@@ -1,6 +1,7 @@
 import { dirname } from 'node:path';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import type { Bookmark, NewBookmark } from '$lib/types';
+import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { normalizeUrl } from '$lib/url';
 import { parseBookmarks, serializeBookmarks } from './toml';
 import { bookmarksFile } from './config';
@@ -79,6 +80,40 @@ export function addBookmark(input: NewBookmark): Promise<AddResult> {
 			added: new Date().toISOString()
 		};
 		return { next: [bookmark, ...list], result: { bookmark, created: true } };
+	});
+}
+
+/**
+ * Add many bookmarks in a single read-modify-write. URLs already present (in the
+ * file or earlier in the batch) are skipped, never overwritten — an import must
+ * not clobber notes or tags you've curated here.
+ */
+export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
+	return transact((list) => {
+		const known = new Set(list.map((b) => b.url));
+		const created: Bookmark[] = [];
+
+		for (const item of items) {
+			const url = normalizeUrl(item.url);
+			if (!url || known.has(url)) continue;
+			known.add(url);
+
+			const fields = normalizeFields(item);
+			created.push({
+				url,
+				title: fields.title ?? url,
+				tags: fields.tags ?? [],
+				collection: fields.collection,
+				notes: fields.notes,
+				added: item.added ?? new Date().toISOString()
+			});
+		}
+
+		const summary: ImportSummary = {
+			added: created.length,
+			skipped: items.length - created.length
+		};
+		return { next: created.length ? [...created, ...list] : undefined, result: summary };
 	});
 }
 

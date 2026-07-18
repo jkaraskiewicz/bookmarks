@@ -1,20 +1,9 @@
 import type { PageMetadata } from '$lib/types';
+import { decodeEntities } from '$lib/html';
 
 const FETCH_TIMEOUT_MS = 8000;
 const USER_AGENT =
 	'Mozilla/5.0 (compatible; BookmarkManager/1.0; +http://localhost) metadata-fetcher';
-
-/** Decode the handful of HTML entities that commonly show up in titles. */
-function decodeEntities(s: string): string {
-	return s
-		.replace(/&amp;/g, '&')
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
-		.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-		.trim();
-}
 
 /** Pull the `content` value out of a matched <meta> tag (attr order-independent). */
 function metaContent(html: string, matcher: RegExp): string | undefined {

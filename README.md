@@ -10,7 +10,27 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design & requireme
 - Add / browse / edit / delete bookmarks from the browser.
 - Tags and collections, with search + filtering.
 - Automatic metadata fetch (title, description, favicon) when you add a URL.
+- Graph view showing how bookmarks cluster by shared tags and collections.
+- Import from Chrome (and any browser) + export back out.
 - Plain-text storage you can also edit by hand.
+
+## Importing from Chrome
+
+Open **/import**. Three ways in:
+
+1. **Straight from your Chrome profile** — no export step; the app reads Chrome's
+   bookmarks file directly. Set `CHROME_USER_DATA_DIR` if Chrome lives somewhere unusual.
+2. **An exported bookmarks HTML file** — `chrome://bookmarks` → ⋮ → _Export bookmarks_.
+   Firefox, Safari and Edge produce the same format.
+3. **A pasted list of URLs**, one per line.
+
+**To import all your open tabs:** press <kbd>⇧⌘D</kbd> in Chrome ("Bookmark all tabs…"),
+save them into a new folder, then use option 1 and put that folder's name in
+_"Only this folder"_. Chrome has no direct "export open tabs", so this is the shortest path.
+
+Browser folders become collections, original dates are preserved, and URLs you already
+have are skipped rather than overwritten. **/export** gives you a bookmarks HTML file
+that imports into any browser.
 
 ## Requirements
 

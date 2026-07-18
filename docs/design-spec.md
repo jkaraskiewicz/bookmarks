@@ -29,7 +29,6 @@ is the source of truth, and the app is a friendly UI on top of it.
 - ❌ Multi-user / accounts / login (single user, trusted machine).
 - ❌ Public hosting (runs locally only).
 - ❌ Cloud sync (plain-text + git could add this later "for free").
-- ❌ Import/export (deferred to a later version).
 - ❌ Favorite/star flag (deferred; tags can cover this for now).
 
 ## 3. Constraints & Principles
@@ -156,6 +155,7 @@ with a format-preserving approach.
    a nested tree (with per-node counts and a datalist for autocomplete on input).
 5. **Auto-fetch metadata** — as described in §7, with a live "fetching…" indicator.
 6. **Graph view** (`/graph`) — see §8a.
+7. **Import & export** (`/import`, `/export`) — see §8b.
 
 ### 8a. Graph / map view — DECIDED
 
@@ -175,6 +175,47 @@ bookmarks as a force-directed "map" of how they group together.
 - **Interactions:** pan & zoom; click a bookmark to open it. Node dragging is off.
 - **Pure/testable core:** `$lib/graph.ts` (`buildGraph`) and `$lib/graphLayout.ts`
   (`layoutGraph`) are framework-free; `buildGraph` is unit-tested.
+
+### 8b. Import & export — DECIDED
+
+Bringing an existing browser library in, and getting it back out again. Three import
+sources, one export format.
+
+**Sources**
+
+1. **Live Chrome profile** (no export step). Chrome keeps its bookmarks as JSON at
+   `<user data dir>/<Profile>/Bookmarks`; since the app runs locally we read it
+   directly. Profiles are auto-discovered per platform (macOS / Windows / Linux),
+   overridable with `CHROME_USER_DATA_DIR`. Timestamps are **WebKit epoch**
+   (microseconds since 1601-01-01) and are converted to ISO.
+2. **Exported bookmarks HTML** — the **Netscape Bookmark File Format**, which Chrome,
+   Firefox, Safari and Edge all produce. It is not well-formed HTML (tags are routinely
+   left unclosed), so it is read with a small tokenizer rather than an HTML parser.
+3. **Pasted URL list** — one URL per line, optionally `url<space>Title`; `#` comments
+   and blanks ignored.
+
+**Open tabs.** Chrome has no native bulk "export open tabs". The supported flow is
+Chrome's own **"Bookmark all tabs…" (⇧⌘D / Ctrl+Shift+D)**, which drops every tab in
+the window into a new bookmark folder — that folder is then imported via source 1
+using the **"only this folder"** scope. Source 3 covers "copy all tab URLs" extensions.
+
+**Mapping & options**
+
+- Browser **folder nesting → our `/`-separated `collection`** path, so hierarchy survives.
+- Original creation dates are **preserved** (`added`), not reset to import time.
+- Per-run options: a **collection prefix**, **extra tags** applied to everything, and a
+  **folder scope** filter.
+- Non-`http(s)` entries (bookmarklets, `chrome://`, `place:`) are skipped.
+
+**Safety:** import **never overwrites** an existing bookmark — a URL already present is
+skipped, so curated tags/notes are safe. Duplicates _within_ a batch collapse too
+(browsers happily file one page in two folders). The whole batch is written in a
+**single transaction**. After importing, the first 25 new entries get background
+metadata enrichment (a cap, to avoid a fetch storm on a 400-bookmark library).
+
+**Export** (`GET /export`) renders everything back to Netscape HTML, so it round-trips
+into any browser. Note the format stores whole-second dates, so sub-second precision is
+lost on a round trip.
 
 ## 9. High-Level Architecture
 
@@ -243,6 +284,5 @@ All prior open questions are now decided:
 
 ## 12. Deferred / Future Ideas
 
-- Import from / export to browser bookmarks (HTML).
 - Favorite/star, local favicon caching, comment-preserving TOML writes.
 - File-watcher live refresh, full-text ranking, keyboard shortcuts, git-based sync.
