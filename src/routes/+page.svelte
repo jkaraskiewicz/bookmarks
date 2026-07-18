@@ -8,6 +8,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import BookmarkList from '$lib/components/BookmarkList.svelte';
 	import EditDialog from '$lib/components/EditDialog.svelte';
+	import ViewToggle from '$lib/components/ViewToggle.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -49,7 +50,10 @@
 
 <div class="min-h-screen bg-neutral-900 text-neutral-100">
 	<header class="border-b border-neutral-800 bg-neutral-950/60 px-6 py-4">
-		<AddBar />
+		<div class="mx-auto flex max-w-5xl items-start gap-4">
+			<div class="min-w-0 flex-1"><AddBar /></div>
+			<ViewToggle />
+		</div>
 		{#if errorMessage}
 			<p class="mx-auto mt-2 max-w-5xl text-sm text-amber-400">{errorMessage}</p>
 		{/if}

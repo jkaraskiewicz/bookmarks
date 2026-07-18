@@ -155,6 +155,26 @@ with a format-preserving approach.
 4. **Tags & nested collections** — assign/edit; browse tags as chips and collections as
    a nested tree (with per-node counts and a datalist for autocomplete on input).
 5. **Auto-fetch metadata** — as described in §7, with a live "fetching…" indicator.
+6. **Graph view** (`/graph`) — see §8a.
+
+### 8a. Graph / map view — DECIDED
+
+A second view (toggle **List / Graph** in the header, routed at `/graph`) shows
+bookmarks as a force-directed "map" of how they group together.
+
+- **Model: hub nodes.** Rather than drawing an edge between every pair of bookmarks
+  that share something (which explodes for popular tags), tags and collections become
+  their own small nodes; each bookmark links to the tags/collections it belongs to.
+  Only hubs shared by **≥ 2 bookmarks** are shown, so the graph reflects real
+  groupings; bookmarks with no shared attribute appear as lone nodes.
+- **Rendering:** [`@xyflow/svelte`](https://svelte.flow) (Svelte Flow) for the canvas +
+  interactions; **d3-force** computes a settled layout (link/charge/center/collide +
+  mild centering) that Svelte Flow then renders. Dark theme, attribution hidden.
+- **Node types:** bookmark (favicon + title card, click opens the URL), tag (blue pill),
+  collection (green folder pill). Hub size hints at how many bookmarks it holds.
+- **Interactions:** pan & zoom; click a bookmark to open it. Node dragging is off.
+- **Pure/testable core:** `$lib/graph.ts` (`buildGraph`) and `$lib/graphLayout.ts`
+  (`layoutGraph`) are framework-free; `buildGraph` is unit-tested.
 
 ## 9. High-Level Architecture
 

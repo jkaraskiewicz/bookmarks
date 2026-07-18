@@ -18,7 +18,7 @@
 	};
 </script>
 
-<form method="POST" action="?/add" use:enhance={enhanceAdd} class="mx-auto max-w-5xl">
+<form method="POST" action="?/add" use:enhance={enhanceAdd} class="w-full">
 	<div class="flex items-center gap-3">
 		<h1 class="text-lg font-semibold tracking-tight whitespace-nowrap">🔖 Bookmarks</h1>
 		<input
