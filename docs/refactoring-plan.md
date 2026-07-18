@@ -29,7 +29,7 @@ are behavioral defects rather than style, so they come first and separately.
       (`server/chromeProfile.ts` + `routes/import/+page.server.ts`). `hasBookmarks`
       reads the whole file just to test existence, `countLinks` reads it again, and the
       page `load` reads it a third time for `chromeFolders` — parsing the JSON twice.
-      ~960KB of I/O per page view for a 319KB profile.
+      Three full reads of the profile file per page view, where one suffices.
       _Fix:_ `access()` for existence; read and parse once, derive count + folders from
       the single parse.
 

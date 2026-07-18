@@ -161,12 +161,13 @@ The asymmetry on import is deliberate: silently dropping a bookmark because of a
 _guess_ is worse than keeping a duplicate, so probable matches are imported and listed
 rather than discarded.
 
-**Empirical note (why this scope).** Measured against a real 362-bookmark Chrome
-library: exact matches caught 2 duplicates, fragment normalization 1 more, and
-`www` / `http`-vs-`https` / tracking-param / trailing-slash rules caught **zero**
-additional. The aggressive tier is cheap but earns nothing, which is why it warns
-instead of merging. A dedicated "find duplicates" cleanup screen was considered and
-deferred — with dedupe applied at import time, it would open to an empty list.
+**Why this scope.** The rules were chosen by measuring a representative browser
+bookmark library rather than by assumption. Exact matching and fragment normalization
+accounted for essentially all real duplicates found; the `www`, `http`-vs-`https`,
+tracking-parameter and trailing-slash rules caught none beyond those. The aggressive
+tier is cheap to implement but earns little, which is why it warns instead of merging.
+A dedicated "find duplicates" cleanup screen was considered and deferred — with dedupe
+applied at import time, it would generally open to an empty list.
 
 ## 7. Metadata Auto-Fetch — DECIDED (behavior)
 
@@ -256,7 +257,7 @@ using the **"only this folder"** scope. Source 3 covers "copy all tab URLs" exte
 skipped, so curated tags/notes are safe. Duplicates _within_ a batch collapse too
 (browsers happily file one page in two folders). The whole batch is written in a
 **single transaction**. After importing, the first 25 new entries get background
-metadata enrichment (a cap, to avoid a fetch storm on a 400-bookmark library).
+metadata enrichment (a cap, to avoid a fetch storm when importing a large library).
 
 **Export** (`GET /export`) renders everything back to Netscape HTML, so it round-trips
 into any browser. Note the format stores whole-second dates, so sub-second precision is
