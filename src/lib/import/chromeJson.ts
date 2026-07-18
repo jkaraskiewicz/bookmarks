@@ -75,13 +75,14 @@ export function parseChromeBookmarks(json: string, rootKeys?: string[]): ImportI
 }
 
 /**
- * List the folder paths present in a Chrome bookmarks file, with how many links each
+ * List the folder paths across already-parsed items, with how many bookmarks each
  * holds directly. Used to let the user pick a single folder to import (e.g. the one
- * "Bookmark all tabs" just created).
+ * "Bookmark all tabs" just created). Takes items rather than JSON so the caller can
+ * parse the profile once and derive everything it needs from that.
  */
-export function chromeFolders(json: string): { path: string; count: number }[] {
+export function folderCounts(items: ImportItem[]): { path: string; count: number }[] {
 	const counts = new Map<string, number>();
-	for (const item of parseChromeBookmarks(json)) {
+	for (const item of items) {
 		const path = item.collection ?? '';
 		counts.set(path, (counts.get(path) ?? 0) + 1);
 	}

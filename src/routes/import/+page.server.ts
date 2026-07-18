@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { parseNetscape } from '$lib/import/netscape';
-import { parseChromeBookmarks, chromeFolders } from '$lib/import/chromeJson';
+import { parseChromeBookmarks, folderCounts } from '$lib/import/chromeJson';
 import { parseUrlList } from '$lib/import/urlList';
 import { prepareItems, type ImportOptions } from '$lib/import/prepare';
 import { addBookmarks } from '$lib/server/repository';
@@ -46,12 +46,21 @@ async function runImport(items: ImportItem[], options: ImportOptions) {
 }
 
 export const load: PageServerLoad = async () => {
-	const profiles = await listChromeProfiles();
-	// Offer the first profile's folder list so "Bookmark all tabs" folders are pickable.
-	const folders = profiles.length
-		? chromeFolders(await readChromeBookmarksJson(profiles[0].dir))
-		: [];
-	return { profiles, folders };
+	// Read and parse each profile exactly once, deriving both its bookmark count and
+	// its folder list from that single parse.
+	const found = await listChromeProfiles();
+	const profiles = await Promise.all(
+		found.map(async ({ dir }) => {
+			const items = parseChromeBookmarks(await readChromeBookmarksJson(dir));
+			return { dir, count: items.length, folders: folderCounts(items) };
+		})
+	);
+
+	return {
+		profiles: profiles.map(({ dir, count }) => ({ dir, count })),
+		// The first profile's folders, so "Bookmark all tabs" folders are pickable.
+		folders: profiles[0]?.folders ?? []
+	};
 };
 
 export const actions: Actions = {

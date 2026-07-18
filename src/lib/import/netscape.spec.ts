@@ -108,6 +108,52 @@ describe('serializeNetscape', () => {
 		expect(html).toContain('<DD>Daily read');
 	});
 
+	it('writes a nested collection path as real nested folders', () => {
+		// Regression: `Dev/Frameworks` used to emit one folder literally named
+		// "Dev/Frameworks", which Chrome shows as a slash in the folder name.
+		const html = serializeNetscape([
+			{
+				url: 'https://svelte.dev',
+				title: 'Svelte',
+				tags: [],
+				collection: 'Dev/Frameworks',
+				added: '2026-07-18T10:00:00.000Z'
+			}
+		]);
+
+		expect(html).not.toContain('<H3>Dev/Frameworks</H3>');
+		expect(html).toContain('<H3>Dev</H3>');
+		expect(html).toContain('<H3>Frameworks</H3>');
+		// Frameworks must open inside Dev, before Dev closes.
+		expect(html.indexOf('<H3>Dev</H3>')).toBeLessThan(html.indexOf('<H3>Frameworks</H3>'));
+		expect(parseNetscape(html)[0].collection).toBe('Dev/Frameworks');
+	});
+
+	it('keeps sibling subfolders separate', () => {
+		const html = serializeNetscape([
+			{
+				url: 'https://a.dev',
+				title: 'A',
+				tags: [],
+				collection: 'Dev/Frameworks',
+				added: '2026-07-18T10:00:00.000Z'
+			},
+			{
+				url: 'https://b.dev',
+				title: 'B',
+				tags: [],
+				collection: 'Dev/Tools',
+				added: '2026-07-18T10:00:00.000Z'
+			}
+		]);
+
+		const parsed = parseNetscape(html);
+		expect(parsed.find((p) => p.url === 'https://a.dev')?.collection).toBe('Dev/Frameworks');
+		expect(parsed.find((p) => p.url === 'https://b.dev')?.collection).toBe('Dev/Tools');
+		// One shared `Dev` parent, not one per child.
+		expect(html.match(/<H3>Dev<\/H3>/g)).toHaveLength(1);
+	});
+
 	it('round-trips through the parser', () => {
 		const parsed = parseNetscape(serializeNetscape(bookmarks));
 		expect(parsed.map((p) => p.url).sort()).toEqual(bookmarks.map((b) => b.url).sort());

@@ -1,6 +1,6 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, access } from 'node:fs/promises';
 import { env } from '$env/dynamic/private';
 
 /** Where Chrome keeps its user data, per platform. */
@@ -23,31 +23,26 @@ function chromeUserDataDir(): string {
 	}
 }
 
+function bookmarksPath(profileDir: string): string {
+	// Guard against path traversal from a submitted form value.
+	return join(chromeUserDataDir(), profileDir.replace(/[/\\]/g, ''), 'Bookmarks');
+}
+
 export interface ChromeProfile {
 	/** Directory name, e.g. "Default" or "Profile 1". Used as the form value. */
 	dir: string;
-	/** Number of bookmarks the profile holds. */
-	count: number;
-}
-
-/** A directory is a Chrome profile if it contains a "Bookmarks" file. */
-async function hasBookmarks(dir: string): Promise<boolean> {
-	try {
-		await readFile(join(chromeUserDataDir(), dir, 'Bookmarks'), 'utf-8');
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 /** Read one profile's raw Bookmarks JSON. Throws if the profile has none. */
 export function readChromeBookmarksJson(profileDir: string): Promise<string> {
-	// Guard against path traversal from the submitted form value.
-	const safe = profileDir.replace(/[/\\]/g, '');
-	return readFile(join(chromeUserDataDir(), safe, 'Bookmarks'), 'utf-8');
+	return readFile(bookmarksPath(profileDir), 'utf-8');
 }
 
-/** Discover Chrome profiles that have bookmarks. Empty when Chrome isn't installed. */
+/**
+ * Discover Chrome profiles that have a bookmarks file. Empty when Chrome isn't
+ * installed. Only checks for the file's existence — callers that need the contents
+ * read it once themselves, rather than having it read here and again later.
+ */
 export async function listChromeProfiles(): Promise<ChromeProfile[]> {
 	let entries: string[];
 	try {
@@ -60,15 +55,13 @@ export async function listChromeProfiles(): Promise<ChromeProfile[]> {
 	const profiles: ChromeProfile[] = [];
 
 	for (const dir of candidates) {
-		if (!(await hasBookmarks(dir))) continue;
-		const json = await readChromeBookmarksJson(dir);
-		profiles.push({ dir, count: countLinks(json) });
+		try {
+			await access(bookmarksPath(dir));
+			profiles.push({ dir });
+		} catch {
+			// no Bookmarks file in this directory; not a usable profile
+		}
 	}
 
 	return profiles;
-}
-
-/** Cheap link count without building the full item list. */
-function countLinks(json: string): number {
-	return (json.match(/"type":\s*"url"/g) ?? []).length;
 }

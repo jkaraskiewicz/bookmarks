@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseChromeBookmarks, chromeFolders } from './chromeJson';
+import { parseChromeBookmarks, folderCounts } from './chromeJson';
 
 /** WebKit epoch: microseconds since 1601-01-01. This one is 2023-12-08T04:13:20Z. */
 const CHROME_TIME = '13346482400000000';
@@ -65,9 +65,9 @@ describe('parseChromeBookmarks', () => {
 	});
 });
 
-describe('chromeFolders', () => {
+describe('folderCounts', () => {
 	it('lists folder paths with their bookmark counts', () => {
-		expect(chromeFolders(PROFILE)).toEqual([
+		expect(folderCounts(parseChromeBookmarks(PROFILE))).toEqual([
 			{ path: 'Bookmarks bar', count: 1 },
 			{ path: 'Bookmarks bar/Open tabs', count: 1 },
 			{ path: 'Other bookmarks', count: 1 }
