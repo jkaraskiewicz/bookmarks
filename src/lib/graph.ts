@@ -2,6 +2,14 @@ import type { Bookmark } from './types';
 
 export type GraphNodeKind = 'bookmark' | 'tag' | 'collection';
 
+/**
+ * `membership` — a bookmark belongs to a hub.
+ * `parent` — a collection sits inside another collection.
+ * `affinity` — two collapsed hubs share enough bookmarks to be worth relating; a
+ * summary of connections you cannot see because the bookmarks are hidden.
+ */
+export type GraphEdgeKind = 'membership' | 'parent' | 'affinity';
+
 export interface GraphNode {
 	id: string;
 	kind: GraphNodeKind;
@@ -19,6 +27,11 @@ export interface GraphEdge {
 	id: string;
 	source: string;
 	target: string;
+	kind: GraphEdgeKind;
+	/** Affinity only: 0–1, how much of the smaller hub the two share. */
+	strength?: number;
+	/** Affinity only: how many bookmarks the two hubs have in common. */
+	shared?: number;
 }
 
 export interface Graph {
@@ -42,6 +55,11 @@ export const collectionId = (path: string) => `c:${path}`;
 /** Bookmarks with no collection are grouped here rather than scattered loose. */
 const UNFILED = 'Unfiled';
 
+/** An affinity edge needs at least this many shared bookmarks to mean anything. */
+const MIN_AFFINITY_SHARED = 2;
+/** …and they must be at least this much of the smaller hub, so big hubs don't tie to everything. */
+const MIN_AFFINITY_RATIO = 1 / 3;
+
 /**
  * Build the graph as a set of hubs — collections and tags — that hold bookmarks.
  *
@@ -54,20 +72,21 @@ export function buildGraph(bookmarks: Bookmark[], options: GraphOptions = {}): G
 	const { minShared = 2, expanded = new Set<string>(), search = '' } = options;
 
 	const query = search.trim().toLowerCase();
-	const matches = (bookmark: Bookmark) => !query || matchesQuery(bookmark, query);
-
+	const membership = hubMembership(bookmarks);
 	const collections = collectionHubs(bookmarks, minShared);
 	const tags = tagHubs(bookmarks, minShared);
 	const hubs = [...collections.nodes, ...tags.nodes];
 	const hubIds = new Set(hubs.map((hub) => hub.id));
 
 	const nodes: GraphNode[] = [];
-	const edges: GraphEdge[] = [...collections.edges]; // hub → parent hub
+	const edges: GraphEdge[] = [...collections.edges];
 
 	// A bookmark is drawn when its hub is open, or when it matches an active search.
+	const revealedHubs = new Set<string>();
 	for (const bookmark of bookmarks) {
-		const memberships = hubsHolding(bookmark).filter((id) => hubIds.has(id));
-		const revealed = memberships.some((id) => expanded.has(id)) || (query && matches(bookmark));
+		const holders = hubsHolding(bookmark).filter((id) => hubIds.has(id));
+		const revealed =
+			holders.some((id) => expanded.has(id)) || (query !== '' && matchesQuery(bookmark, query));
 		if (!revealed) continue;
 
 		nodes.push({
@@ -78,14 +97,20 @@ export function buildGraph(bookmarks: Bookmark[], options: GraphOptions = {}): G
 			favicon: bookmark.favicon
 		});
 
-		for (const hubIdentifier of memberships) {
+		for (const holder of holders) {
+			revealedHubs.add(holder);
 			edges.push({
-				id: `${hubIdentifier}~${bookmarkId(bookmark.url)}`,
+				id: `${holder}~${bookmarkId(bookmark.url)}`,
 				source: bookmarkId(bookmark.url),
-				target: hubIdentifier
+				target: holder,
+				kind: 'membership'
 			});
 		}
 	}
+
+	// Relate hubs whose bookmarks are hidden — otherwise a collapsed map shows tags and
+	// collections as unrelated islands, hiding the very overlap that makes tags useful.
+	edges.push(...affinityEdges(hubs, membership, revealedHubs));
 
 	// Hubs last so they paint above the bookmarks they hold.
 	for (const hub of hubs) {
@@ -104,6 +129,113 @@ function hubsHolding(bookmark: Bookmark): string[] {
 function matchesQuery(bookmark: Bookmark, query: string): boolean {
 	const haystack = [bookmark.title, bookmark.url, bookmark.collection, ...bookmark.tags];
 	return haystack.some((field) => field?.toLowerCase().includes(query));
+}
+
+/**
+ * Which bookmarks sit in each hub. Collections include everything nested beneath
+ * them, matching how their counts are reported.
+ */
+function hubMembership(bookmarks: Bookmark[]): Map<string, Set<string>> {
+	const members = new Map<string, Set<string>>();
+	const add = (hub: string, url: string) => {
+		const set = members.get(hub);
+		if (set) set.add(url);
+		else members.set(hub, new Set([url]));
+	};
+
+	for (const bookmark of bookmarks) {
+		for (const path of pathAndAncestors(bookmark.collection?.trim() || UNFILED)) {
+			add(collectionId(path), bookmark.url);
+		}
+		for (const tag of bookmark.tags) add(tagId(tag), bookmark.url);
+	}
+
+	return members;
+}
+
+/**
+ * Faint edges between hubs that overlap: `#testing` next to `Dev/Tools`, or two tags
+ * that travel together. Only drawn between hubs that are both collapsed — once a hub
+ * is open its real memberships are visible, and the summary would just be clutter.
+ *
+ * Collection-to-collection pairs are skipped: nesting already relates those, and a
+ * parent always contains its children, so every such pair would score perfectly.
+ */
+function affinityEdges(
+	hubs: GraphNode[],
+	membership: Map<string, Set<string>>,
+	revealedHubs: ReadonlySet<string>
+): GraphEdge[] {
+	const candidates = hubs.filter((hub) => !revealedHubs.has(hub.id));
+	const edges: GraphEdge[] = [];
+
+	for (let i = 0; i < candidates.length; i++) {
+		for (let j = i + 1; j < candidates.length; j++) {
+			const [left, right] = [candidates[i], candidates[j]];
+			if (left.kind === 'collection' && right.kind === 'collection') continue;
+
+			const leftMembers = membership.get(left.id);
+			const rightMembers = membership.get(right.id);
+			if (!leftMembers || !rightMembers) continue;
+
+			const shared = intersectionSize(leftMembers, rightMembers);
+			if (shared < MIN_AFFINITY_SHARED) continue;
+
+			const strength = shared / Math.min(leftMembers.size, rightMembers.size);
+			if (strength < MIN_AFFINITY_RATIO) continue;
+
+			edges.push({
+				id: `${left.id}=${right.id}`,
+				source: left.id,
+				target: right.id,
+				kind: 'affinity',
+				strength,
+				shared
+			});
+		}
+	}
+
+	return keepMostSpecific(edges);
+}
+
+/**
+ * A tag that sits in `Dev/Frameworks` necessarily also sits in `Dev`, so relating it
+ * to both says the same thing twice and doubles the lines on screen. Keep the most
+ * specific claim and drop the ancestor.
+ */
+function keepMostSpecific(edges: GraphEdge[]): GraphEdge[] {
+	const collectionsByPartner = new Map<string, string[]>();
+	for (const edge of edges) {
+		const [hub, collection] = edge.source.startsWith('c:')
+			? [edge.target, edge.source]
+			: [edge.source, edge.target];
+		if (!collection.startsWith('c:')) continue; // tag-to-tag: nothing to generalize
+		const paths = collectionsByPartner.get(hub);
+		if (paths) paths.push(collection);
+		else collectionsByPartner.set(hub, [collection]);
+	}
+
+	const isAncestorOfAnother = (hub: string, collection: string) => {
+		const path = collection.slice(2);
+		return (collectionsByPartner.get(hub) ?? []).some(
+			(other) => other !== collection && other.slice(2).startsWith(`${path}/`)
+		);
+	};
+
+	return edges.filter((edge) => {
+		const [hub, collection] = edge.source.startsWith('c:')
+			? [edge.target, edge.source]
+			: [edge.source, edge.target];
+		if (!collection.startsWith('c:')) return true;
+		return !isAncestorOfAnother(hub, collection);
+	});
+}
+
+function intersectionSize(left: Set<string>, right: Set<string>): number {
+	const [small, large] = left.size <= right.size ? [left, right] : [right, left];
+	let count = 0;
+	for (const value of small) if (large.has(value)) count++;
+	return count;
 }
 
 /**
@@ -146,7 +278,8 @@ function collectionHubs(
 			edges.push({
 				id: `${collectionId(parent)}>${collectionId(path)}`,
 				source: collectionId(path),
-				target: collectionId(parent)
+				target: collectionId(parent),
+				kind: 'parent'
 			});
 		}
 	}

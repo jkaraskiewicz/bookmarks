@@ -71,15 +71,22 @@ export function layoutGraph(graph: Graph, options: LayoutOptions = {}): Map<stri
 		};
 	});
 
-	const links = graph.edges.map((edge) => ({ source: edge.source, target: edge.target }));
+	// Affinity links are the clustering force: the more two hubs overlap, the closer
+	// they sit, so related tags and collections end up as neighbours.
+	const links = graph.edges.map((edge) => ({
+		source: edge.source,
+		target: edge.target,
+		distance: edge.kind === 'affinity' ? 230 - (edge.strength ?? 0) * 110 : undefined,
+		pull: edge.kind === 'affinity' ? 0.15 + (edge.strength ?? 0) * 0.55 : undefined
+	}));
 
 	const simulation = forceSimulation(nodes)
 		.force(
 			'link',
 			forceLink<SimNode, (typeof links)[number]>(links)
 				.id((node) => node.id)
-				.distance((link) => (isHubEnd(link.source) ? 160 : 110))
-				.strength(0.5)
+				.distance((link) => link.distance ?? (isHubEnd(link.source) ? 160 : 110))
+				.strength((link) => link.pull ?? 0.5)
 		)
 		.force(
 			'charge',

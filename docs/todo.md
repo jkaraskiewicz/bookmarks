@@ -20,9 +20,9 @@ Remaining ideas:
       incremental layout would fix it if it becomes annoying.
 - [ ] **`minShared` is fixed at 2.** Expose it as a control to make the map sparser or
       denser.
-- [ ] **Tag hubs are unproven in practice** — a library imported from Chrome has no
-      tags, so the graph is collection-only until tags get used. Revisit the layout
-      balance once tags are in play.
+- [ ] **Tag hubs are unproven at scale** — verified on a small multi-tag library, but a
+      real tagged library may need the affinity thresholds (2 shared, a third of the
+      smaller hub) tuned. Expose them as controls if the defaults feel wrong.
 - [ ] Hovering a node could dim everything not connected to it.
 - [ ] Clicking a hub could also filter the list view.
 

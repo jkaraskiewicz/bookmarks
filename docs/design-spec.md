@@ -229,6 +229,14 @@ open something").
   when a hub opens, so the map grows outward instead of rearranging under you.
 - **Bookmarks with no collection** are grouped under a single `Unfiled` hub rather than
   scattered loose.
+- **Affinity edges relate collapsed hubs.** With bookmarks hidden, tags and collections
+  would otherwise sit as unrelated islands — hiding the overlap that makes tags worth
+  having. A faint dashed edge is drawn between two hubs sharing at least 2 bookmarks
+  _and_ at least a third of the smaller hub, weighted by that overlap. It is a summary
+  of links you cannot see, so it disappears once either hub is opened and its real
+  memberships are drawn. Collection-to-collection pairs are skipped (nesting already
+  relates those), and where a tag relates to both a collection and something nested
+  inside it, only the more specific claim is kept.
 - **Rendering:** [`@xyflow/svelte`](https://svelte.flow) for the canvas, **d3-force**
   for a settled layout (link/charge/center/collide + mild centering). Collision radii
   are half the widest a node can get, so cards cannot overlap sideways; the tick count

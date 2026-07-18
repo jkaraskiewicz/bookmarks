@@ -37,7 +37,15 @@
 		edges = graph.edges.map((edge) => ({
 			id: edge.id,
 			source: edge.source,
-			target: edge.target
+			target: edge.target,
+			// Affinity edges summarize hidden overlap, so they read as a hint rather
+			// than a fact: dashed, and fainter the weaker the overlap.
+			animated: false,
+			style:
+				edge.kind === 'affinity'
+					? `stroke-dasharray: 4 4; opacity: ${(0.18 + (edge.strength ?? 0) * 0.42).toFixed(2)}; stroke-width: ${(0.8 + (edge.strength ?? 0) * 1.6).toFixed(2)}`
+					: 'opacity: 0.55',
+			label: edge.kind === 'affinity' && (edge.shared ?? 0) >= 3 ? String(edge.shared) : undefined
 		}));
 	});
 
