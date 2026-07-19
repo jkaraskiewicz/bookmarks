@@ -30,7 +30,17 @@ export const DEFAULT_PREFERENCE: ThemePreference = 'system';
 /** Where the choice is remembered. Read by the inline script in `app.html` too. */
 export const STORAGE_KEY = 'bookmarks:theme';
 
+type ThemeEntry = (typeof THEMES)[number];
+
 const THEME_IDS: readonly string[] = THEMES.map((theme) => theme.id);
+
+/** The registry entry for a theme. */
+function themeEntry(id: ThemeId): ThemeEntry | undefined {
+	return THEMES.find((theme) => theme.id === id);
+}
+
+/** How `system` presents itself, since it has no entry of its own. */
+const SYSTEM = { label: 'System', icon: '🖥️' } as const;
 
 /** True when `value` is a theme this build knows how to render. */
 export function isThemeId(value: unknown): value is ThemeId {
@@ -70,16 +80,16 @@ export function nextPreference(current: ThemePreference): ThemePreference {
 
 /** How a preference should be described in the UI. */
 export function preferenceLabel(preference: ThemePreference): string {
-	if (preference === 'system') return 'System';
-	return THEMES.find((theme) => theme.id === preference)?.label ?? preference;
+	if (preference === 'system') return SYSTEM.label;
+	return themeEntry(preference)?.label ?? preference;
+}
+
+export function preferenceIcon(preference: ThemePreference): string {
+	if (preference === 'system') return SYSTEM.icon;
+	return themeEntry(preference)?.icon ?? '';
 }
 
 /** Whether a theme is fundamentally light or dark, for widgets that only know those two. */
 export function themeBase(id: ThemeId): 'light' | 'dark' {
-	return THEMES.find((theme) => theme.id === id)?.base ?? 'dark';
-}
-
-export function preferenceIcon(preference: ThemePreference): string {
-	if (preference === 'system') return '🖥️';
-	return THEMES.find((theme) => theme.id === preference)?.icon ?? '';
+	return themeEntry(id)?.base ?? 'dark';
 }

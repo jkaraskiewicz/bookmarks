@@ -8,6 +8,48 @@ over-engineering a single-user local app.
 
 ---
 
+# Round 5 — after the theming work
+
+**Status:** ✅ Complete (2026-07-19). `check` (0 errors) + `test` (216 passing) +
+`build` green.
+
+A review of the theme module found one real bug and three duplications.
+
+## Defect
+
+- [x] **The pre-paint script trusted the stored theme.** It applied whatever was in
+      `localStorage` without checking it was a theme this build ships. A stale or
+      hand-edited value was written to `data-theme`, matched no palette, and was then
+      corrected by the module a moment later — the flash the script exists to prevent.
+      It now validates, and resolves an unknown value the same way the module does.
+
+## Duplications, each turned into something checked
+
+- [x] **The script restates the theme list, storage key and fallback.** Unavoidable —
+      it must run before any module loads. `prepaint.spec.ts` now parses `app.html` and
+      asserts all three still match the module, plus that the validation is present.
+- [x] **`base` (TypeScript) and `color-scheme` (CSS) both said whether a theme is light
+      or dark**, with nothing catching disagreement. `color-scheme` drives scrollbars
+      and native controls, so a mismatch makes them fight the palette. Now asserted.
+- [x] **Three `THEMES.find(...)` lookups**, and `preferenceLabel`/`preferenceIcon`
+      repeating the same "special-case system, else look up" shape → one `themeEntry()`
+      and a `SYSTEM` constant.
+
+## Structure and naming
+
+- [x] **A palette parser and Tailwind reference table lived inside `contrast.spec.ts`**
+      (166 lines). Extracted to `theme/palettes.ts`, now shared with the new
+      consistency checks.
+- [x] **`border-subtle` read `--subtle-line`** while every other utility reads a
+      palette variable of the same name → `--subtle`.
+
+## Found by the new checks
+
+- [x] Adding `faint on elevated` to the required pairs — placeholder text sits on input
+      backgrounds — caught Darcula at 4.48:1, a hair under AA. Lightened to 4.7:1.
+
+---
+
 # Round 4 — after the graph rework
 
 **Status:** ✅ Complete (2026-07-19). `check` (0 errors) + `test` (145 passing) +

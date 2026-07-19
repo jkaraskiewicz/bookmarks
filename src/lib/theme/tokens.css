@@ -24,7 +24,7 @@
 	--color-faint: var(--faint);
 
 	/* Lines. */
-	--color-subtle: var(--subtle-line);
+	--color-subtle: var(--subtle);
 	--color-line: var(--line);
 	--color-focus: var(--focus);
 

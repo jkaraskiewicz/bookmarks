@@ -6,16 +6,22 @@
 		<meta name="text-scale" content="scale" />
 		%sveltekit.head%
 		<script>
-			// Applied before first paint, so the page never flashes the wrong theme.
-			// Mirrors resolveTheme() in src/lib/theme/index.ts.
+			// Applied before first paint so the page never flashes the wrong theme.
+			// This has to run before any module loads, so it necessarily restates
+			// resolveTheme() and the storage key from src/lib/theme. A test asserts
+			// the list and the key below still match the module.
 			(() => {
+				const THEMES = ['dark', 'light', 'darcula'];
+				const STORAGE_KEY = 'bookmarks:theme';
+				const FALLBACK = 'dark';
 				try {
-					const stored = localStorage.getItem('bookmarks:theme') ?? 'system';
+					const stored = localStorage.getItem(STORAGE_KEY);
+					const preference = stored === 'system' || THEMES.includes(stored) ? stored : 'system';
 					const prefersLight = matchMedia('(prefers-color-scheme: light)').matches;
-					const theme = stored === 'system' ? (prefersLight ? 'light' : 'dark') : stored;
-					document.documentElement.dataset.theme = theme;
+					document.documentElement.dataset.theme =
+						preference === 'system' ? (prefersLight ? 'light' : FALLBACK) : preference;
 				} catch {
-					document.documentElement.dataset.theme = 'dark';
+					document.documentElement.dataset.theme = FALLBACK;
 				}
 			})();
 		</script>
