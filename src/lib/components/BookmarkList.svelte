@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { Bookmark } from '$lib/types';
 	import BookmarkRow from './BookmarkRow.svelte';
 	import { selectAllState } from '$lib/selection';
@@ -11,7 +12,8 @@
 		ontoggleTag,
 		onedit,
 		ontoggleSelect,
-		ontoggleAll
+		ontoggleAll,
+		actions
 	}: {
 		bookmarks: Bookmark[];
 		total: number;
@@ -21,6 +23,8 @@
 		onedit: (bookmark: Bookmark) => void;
 		ontoggleSelect: (url: string) => void;
 		ontoggleAll: () => void;
+		/** Shown in the header row in place of the count while a selection exists. */
+		actions?: Snippet;
 	} = $props();
 
 	const visible = $derived(bookmarks.map((bookmark) => bookmark.url));
@@ -28,7 +32,12 @@
 </script>
 
 <main class="min-w-0 flex-1">
-	<div class="mb-3 flex items-center gap-2 text-xs text-faint">
+	<!--
+		One header row, always present and always the same height. Selection actions
+		replace the count here rather than appearing above the list, so starting a
+		selection does not shove every bookmark down the page.
+	-->
+	<div class="mb-2 flex min-h-9 items-center gap-2 text-xs text-faint">
 		{#if total > 0}
 			<input
 				type="checkbox"
@@ -36,11 +45,16 @@
 				indeterminate={allState === 'some'}
 				onchange={ontoggleAll}
 				disabled={bookmarks.length === 0}
-				class="size-4 rounded border-line text-accent focus:ring-focus"
+				class="size-4 shrink-0 rounded border-line text-accent focus:ring-focus"
 				aria-label={allState === 'all' ? 'Deselect all shown' : 'Select all shown'}
 			/>
 		{/if}
-		<span>{bookmarks.length} of {total} bookmark{total === 1 ? '' : 's'}</span>
+
+		{#if actions}
+			{@render actions()}
+		{:else}
+			<span>{bookmarks.length} of {total} bookmark{total === 1 ? '' : 's'}</span>
+		{/if}
 	</div>
 
 	{#if total === 0}

@@ -47,35 +47,45 @@
 
 	<div class="min-w-0 flex-1">
 		<!--
-			A flex row rather than inline text: `truncate` needs a sized box, and an
-			inline <a> is not one. Without this a bookmark whose title is a long URL —
-			which is every bookmark whose page could not be read — widens the row and
-			scrolls the whole page sideways.
+			The title is the thing being scanned for, so it gets the room. `truncate`
+			needs a sized box, hence the flex row rather than inline text; and the
+			host is capped so a long domain cannot crowd the title out.
 		-->
 		<div class="flex min-w-0 items-baseline gap-2">
 			<a
 				href={bookmark.url}
 				target="_blank"
 				rel="noreferrer"
-				class="truncate font-medium text-content hover:text-accent-content"
+				class="min-w-0 truncate font-medium text-content hover:text-accent-content"
 				title={bookmark.description || bookmark.url}>{bookmark.title}</a
 			>
-			<span class="shrink-0 text-xs text-faint">{hostname(bookmark.url)}</span>
-			{#if bookmark.collection}
-				<span class="hidden shrink-0 text-xs text-faint sm:inline">/ {bookmark.collection}</span>
-			{/if}
+			<!-- Holds its natural width up to a cap: a host shrunk to "d…" tells you nothing. -->
+			<span class="max-w-36 shrink-0 truncate text-xs text-faint">{hostname(bookmark.url)}</span>
 			{#if pending}
 				<span class="shrink-0 animate-pulse text-xs text-accent-content">fetching…</span>
 			{/if}
 		</div>
-		{#if bookmark.notes}
-			<p class="truncate text-xs text-faint">{bookmark.notes}</p>
-		{:else if bookmark.description}
-			<p class="truncate text-xs text-faint italic">{bookmark.description}</p>
-		{/if}
+
+		<!--
+			Collection lives on the secondary line with the notes, not beside the title.
+			A nested path like `foo/bar/baz` is long, and it was squeezing the title
+			down to a few characters — the one field that must stay readable.
+		-->
+		<p class="flex min-w-0 items-baseline gap-1.5 text-xs text-faint">
+			{#if bookmark.collection}
+				<span class="max-w-1/2 shrink-0 truncate" title={bookmark.collection}
+					>{bookmark.collection}</span
+				>
+			{/if}
+			{#if bookmark.notes}
+				<span class="truncate">{bookmark.notes}</span>
+			{:else if bookmark.description}
+				<span class="truncate italic">{bookmark.description}</span>
+			{/if}
+		</p>
 	</div>
 
-	<div class="flex shrink-0 flex-wrap gap-1">
+	<div class="flex max-w-1/3 shrink flex-wrap justify-end gap-1">
 		{#each bookmark.tags as tag (tag)}
 			<button
 				onclick={() => ontoggleTag(tag)}

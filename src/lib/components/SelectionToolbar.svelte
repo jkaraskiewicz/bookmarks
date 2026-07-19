@@ -4,9 +4,12 @@
 	import { ghostButton, secondaryButton } from './ui';
 
 	/**
-	 * Actions for the current selection. Only operations that make sense on many
-	 * bookmarks at once appear here — editing a title or a URL is inherently singular,
-	 * so there is no bulk edit.
+	 * Actions for the current selection. Rendered inside the list's header row rather
+	 * than as a bar of its own, so starting a selection swaps that row's contents
+	 * instead of pushing the whole list down.
+	 *
+	 * Only operations that make sense on many bookmarks at once appear here — editing
+	 * a title or a URL is inherently singular, so there is no bulk edit.
 	 */
 	let {
 		selected,
@@ -40,49 +43,45 @@
 
 	const count = $derived(selected.length);
 	const noun = $derived(count === 1 ? 'bookmark' : 'bookmarks');
+
+	const compactButton = 'px-2 py-1 text-xs';
 </script>
 
-<div
-	class="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-sm"
->
-	<span class="text-content">{count} {noun} selected</span>
-	{#if hiddenCount > 0}
-		<!-- Say so plainly: the filter hides them, but an action still reaches them. -->
-		<span class="text-faint">({hiddenCount} not shown by the current filter)</span>
-	{/if}
+<span class="shrink-0 text-content">{count} selected</span>
+{#if hiddenCount > 0}
+	<!-- Say so plainly: the filter hides them, but an action still reaches them. -->
+	<span class="hidden shrink-0 sm:inline">({hiddenCount} hidden by the filter)</span>
+{/if}
 
-	<div class="flex-1"></div>
+<div class="flex-1"></div>
 
-	<form method="POST" action="?/refreshSelected" use:enhance={afterAction} class="contents">
+<form method="POST" action="?/refreshSelected" use:enhance={afterAction} class="contents">
+	{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
+	<button
+		type="submit"
+		class="{secondaryButton} {compactButton}"
+		title="Re-fetch title, description and icon">↻ Refresh</button
+	>
+</form>
+
+{#if confirmingDelete}
+	<form method="POST" action="?/deleteSelected" use:enhance={afterAction} class="contents">
 		{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
-		<button type="submit" class={secondaryButton} title="Re-fetch title, description and icon">
-			↻ Refresh metadata
-		</button>
-	</form>
-
-	{#if confirmingDelete}
-		<form method="POST" action="?/deleteSelected" use:enhance={afterAction} class="contents">
-			{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
-			<button
-				type="submit"
-				class="rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-on-accent"
-			>
-				Delete {count}
-				{noun}
-			</button>
-		</form>
-		<button type="button" onclick={() => (confirmingDelete = false)} class={ghostButton}>
-			Cancel
-		</button>
-	{:else}
-		<button
-			type="button"
-			onclick={() => (confirmingDelete = true)}
-			class="{secondaryButton} text-danger"
+		<button type="submit" class="rounded-md bg-danger px-2 py-1 text-xs font-medium text-on-accent"
+			>Delete {count} {noun}</button
 		>
-			Delete…
-		</button>
-	{/if}
+	</form>
+	<button
+		type="button"
+		onclick={() => (confirmingDelete = false)}
+		class="{ghostButton} {compactButton}">Cancel</button
+	>
+{:else}
+	<button
+		type="button"
+		onclick={() => (confirmingDelete = true)}
+		class="{secondaryButton} {compactButton} text-danger">Delete…</button
+	>
+{/if}
 
-	<button type="button" onclick={onclear} class={ghostButton}>Clear</button>
-</div>
+<button type="button" onclick={onclear} class="{ghostButton} {compactButton}">Clear</button>

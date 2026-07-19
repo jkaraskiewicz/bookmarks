@@ -61,6 +61,15 @@
 	}
 </script>
 
+{#snippet selectionActions()}
+	<SelectionToolbar
+		selected={selectedUrls}
+		hiddenCount={hiddenSelected}
+		onclear={() => (selected = new Set())}
+		ondone={() => (selected = new Set())}
+	/>
+{/snippet}
+
 <svelte:head><title>Bookmarks</title></svelte:head>
 
 <!-- Autocomplete source shared by the add + edit collection inputs. -->
@@ -93,26 +102,17 @@
 			{activeTags}
 			ontoggleTag={toggleTag}
 		/>
-		<div class="min-w-0 flex-1">
-			{#if selectedUrls.length > 0}
-				<SelectionToolbar
-					selected={selectedUrls}
-					hiddenCount={hiddenSelected}
-					onclear={() => (selected = new Set())}
-					ondone={() => (selected = new Set())}
-				/>
-			{/if}
-			<BookmarkList
-				bookmarks={filtered}
-				total={data.bookmarks.length}
-				{pendingSet}
-				{selected}
-				ontoggleTag={toggleTag}
-				onedit={(bookmark) => (editing = bookmark)}
-				ontoggleSelect={(url) => (selected = toggleOne(url, selected))}
-				ontoggleAll={() => (selected = toggleAll(visibleUrls, selected))}
-			/>
-		</div>
+		<BookmarkList
+			bookmarks={filtered}
+			total={data.bookmarks.length}
+			{pendingSet}
+			{selected}
+			ontoggleTag={toggleTag}
+			onedit={(bookmark) => (editing = bookmark)}
+			ontoggleSelect={(url) => (selected = toggleOne(url, selected))}
+			ontoggleAll={() => (selected = toggleAll(visibleUrls, selected))}
+			actions={selectedUrls.length > 0 ? selectionActions : undefined}
+		/>
 	</div>
 </div>
 

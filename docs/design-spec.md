@@ -344,6 +344,9 @@ selected, a toolbar appears above the list.
   rather than quietly acting on things you cannot see.
 - **Deleting takes a second click** that names the count, since it cannot be undone.
   Changing the selection cancels a pending confirmation.
+- **The actions replace the list's count row** rather than appearing above the list.
+  That row is always present and a fixed height, so selecting something does not shove
+  every bookmark down the page.
 - **Selection is pruned** against what still exists, so a delete elsewhere cannot leave
   the count reporting more than there is.
 - **Bulk refresh hands the whole selection to the enrichment queue** (§7), which paces
@@ -371,8 +374,15 @@ selected, a toolbar appears above the list.
 - **Styling:** Tailwind CSS, dark-friendly, no component library.
 - **Default view: compact list** — one row per bookmark (favicon · title link · url ·
   collection · tags), dense and fast to scan. A card/grid view can be added later.
-  Each row shows a muted **subtitle line**: the user's `notes`, falling back to the
-  auto-fetched `description` (rendered italic to signal it's machine-generated).
+  Each row shows a muted **subtitle line** carrying the collection, then the user's
+  `notes`, falling back to the auto-fetched `description` (rendered italic to signal
+  it's machine-generated).
+
+  **The title has priority for width.** The collection sits on the subtitle line rather
+  than beside the title, because a nested path like `foo/bar/baz/etc` is long and was
+  squeezing the title — the field being scanned for — down to a few characters. The
+  host holds its natural width up to a cap and never shrinks below it, since a host
+  cut to `d…` conveys nothing.
 
   ```
   [icon] Angular        angular.dev            #frontend #docs
