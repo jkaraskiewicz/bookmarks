@@ -25,7 +25,7 @@
 	{#if total === 0}
 		<p class="text-sm text-faint">No bookmarks yet. Paste a URL above to add your first one.</p>
 	{:else}
-		<ul class="divide-y divide-neutral-800">
+		<ul class="divide-y divide-subtle">
 			{#each bookmarks as bookmark (bookmark.url)}
 				<BookmarkRow {bookmark} pending={pendingSet.has(bookmark.url)} {ontoggleTag} {onedit} />
 			{/each}

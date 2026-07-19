@@ -36,7 +36,7 @@
 >
 	<span aria-hidden="true">{hub.kind === 'tag' ? '#' : '📁'}</span>
 	<span>{hub.label}</span>
-	<span class="rounded-full bg-black/25 px-1.5 text-[0.7em] tabular-nums">{hub.count}</span>
+	<span class="rounded-full bg-badge px-1.5 text-[0.7em] tabular-nums">{hub.count}</span>
 </div>
 
 <Handle type="target" position={Position.Top} style="opacity:0" isConnectable={false} />

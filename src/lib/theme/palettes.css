@@ -46,6 +46,7 @@
 	--tag: color-mix(in oklab, var(--color-sky-600) 85%, transparent);
 	--tag-hover: var(--color-sky-500);
 	--tag-edge: color-mix(in oklab, var(--color-sky-400) 40%, transparent);
+	--badge: color-mix(in oklab, black 25%, transparent);
 }
 
 /* Light. */
@@ -86,6 +87,7 @@
 	--tag: var(--color-sky-600);
 	--tag-hover: var(--color-sky-700);
 	--tag-edge: color-mix(in oklab, var(--color-sky-800) 30%, transparent);
+	--badge: color-mix(in oklab, black 25%, transparent);
 }
 
 /*
@@ -136,4 +138,5 @@
 	--tag: #3592c4; /* Darcula blue */
 	--tag-hover: #6897bb; /* number blue */
 	--tag-edge: color-mix(in oklab, #6897bb 40%, transparent);
+	--badge: color-mix(in oklab, black 25%, transparent);
 }

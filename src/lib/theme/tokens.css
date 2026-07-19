@@ -50,4 +50,6 @@
 	--color-tag: var(--tag);
 	--color-tag-hover: var(--tag-hover);
 	--color-tag-edge: var(--tag-edge);
+	/** Darkening for the count badge that sits on a hub's fill. */
+	--color-badge: var(--badge);
 }
