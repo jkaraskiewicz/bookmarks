@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { composite, contrastRatio, parseColor, type Rgb } from './contrast';
+import { THEMES } from './index';
 
 /**
  * Every theme must be legible. This reads `palettes.css` directly, so a theme added
@@ -121,8 +122,10 @@ const REQUIRED: { text: string; on: string; min: number }[] = [
 const palettes = readPalettes();
 
 describe('every theme is legible', () => {
-	it('finds the themes declared in palettes.css', () => {
-		expect([...palettes.keys()].sort()).toEqual(['dark', 'light']);
+	it('styles exactly the themes the app offers', () => {
+		// A theme registered but not styled falls back to the block above it; a theme
+		// styled but not registered is unreachable. Either way, a bug.
+		expect([...palettes.keys()].sort()).toEqual(THEMES.map((entry) => entry.id).sort());
 	});
 
 	for (const [name, palette] of palettes) {

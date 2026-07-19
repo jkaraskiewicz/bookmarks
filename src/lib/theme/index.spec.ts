@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
 	DEFAULT_PREFERENCE,
+	PREFERENCE_ORDER,
 	THEMES,
 	isThemeId,
 	nextPreference,
 	preferenceIcon,
 	preferenceLabel,
 	resolveTheme,
+	themeBase,
 	toPreference
 } from './index';
 
@@ -55,21 +57,27 @@ describe('resolveTheme', () => {
 });
 
 describe('nextPreference', () => {
-	it('cycles dark → light → system → dark', () => {
-		expect(nextPreference('dark')).toBe('light');
-		expect(nextPreference('light')).toBe('system');
-		expect(nextPreference('system')).toBe('dark');
+	it('offers every theme, then the system option', () => {
+		expect(PREFERENCE_ORDER).toEqual([...THEMES.map((entry) => entry.id), 'system']);
 	});
 
-	it('visits every option exactly once per lap', () => {
-		const seen = new Set();
+	it('visits every option exactly once per lap and returns to the start', () => {
+		const seen = new Set<string>();
 		let preference = DEFAULT_PREFERENCE;
-		for (let step = 0; step < 3; step++) {
+
+		for (let step = 0; step < PREFERENCE_ORDER.length; step++) {
 			seen.add(preference);
 			preference = nextPreference(preference);
 		}
-		expect(seen.size).toBe(3);
-		expect(preference).toBe(DEFAULT_PREFERENCE); // back where it began
+
+		expect(seen.size).toBe(PREFERENCE_ORDER.length);
+		expect(preference).toBe(DEFAULT_PREFERENCE);
+	});
+
+	it('advances rather than sticking', () => {
+		for (const preference of PREFERENCE_ORDER) {
+			expect(nextPreference(preference)).not.toBe(preference);
+		}
 	});
 });
 
@@ -83,6 +91,20 @@ describe('labels', () => {
 	it('gives every option an icon', () => {
 		for (const preference of ['dark', 'light', 'system'] as const) {
 			expect(preferenceIcon(preference)).not.toBe('');
+		}
+	});
+});
+
+describe('themeBase', () => {
+	it('reports what each theme is built on', () => {
+		expect(themeBase('light')).toBe('light');
+		expect(themeBase('dark')).toBe('dark');
+		expect(themeBase('darcula')).toBe('dark');
+	});
+
+	it('gives every registered theme a base', () => {
+		for (const entry of THEMES) {
+			expect(['light', 'dark']).toContain(themeBase(entry.id));
 		}
 	});
 });

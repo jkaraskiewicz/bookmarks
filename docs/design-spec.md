@@ -298,7 +298,12 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
   reference the variable at runtime rather than baking in a literal, which is what
   allows a theme to be swapped without rebuilding the CSS.
 - **A theme is one block** in `theme/palettes.css` keyed by `[data-theme='…']`, plus an
-  entry in the `THEMES` list. Nothing else.
+  entry in the `THEMES` list. Nothing else. Three ship: dark, light and **Darcula**
+  (JetBrains'). Darcula was built as a test of that claim and cost exactly those two
+  files.
+- **Each theme declares a `base`** of light or dark. Widgets with their own two-way
+  switch — Svelte Flow's canvas, and the `color-scheme` hint browsers use for
+  scrollbars — need that answer, and only the theme knows it.
 - **Preference is `dark` | `light` | `system`**, stored in `localStorage`. `system`
   follows `prefers-color-scheme` live. The resolved theme is written to
   `document.documentElement.dataset.theme`.

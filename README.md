@@ -24,7 +24,8 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
 
 ## Themes
 
-The button in the top-right corner cycles between **Dark**, **Light** and **System**.
+The button in the top-right corner cycles between **Dark**, **Light**, **Darcula**
+(JetBrains' IDE theme) and **System**.
 System follows your operating system's setting and changes with it; the other two stay
 put. Your choice is remembered in the browser, and applied before the first paint so
 the page never flashes the wrong colours.
@@ -37,7 +38,9 @@ such as `bg-surface` or `text-muted` — so a new theme needs no component chang
 1. Copy a block in `src/lib/theme/palettes.css`, give it a new `data-theme` name and
    change the values. Every variable in the block must be present; a missing one
    silently inherits from the theme above it.
-2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label and icon.
+2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label, an icon
+   and whether it is fundamentally `light` or `dark`. It joins the toggle's cycle
+   automatically.
 
 `npm test` then checks the new theme automatically: every text-on-background pair must
 meet the WCAG AA contrast minimum, and the theme must declare the same set of variables

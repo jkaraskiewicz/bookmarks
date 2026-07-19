@@ -87,3 +87,53 @@
 	--tag-hover: var(--color-sky-700);
 	--tag-edge: color-mix(in oklab, var(--color-sky-800) 30%, transparent);
 }
+
+/*
+ * Darcula — JetBrains' dark theme. Written as literal hex rather than Tailwind
+ * references, because these are specific published colours rather than steps on a
+ * scale. That a theme can be authored this way is the point: it is just values.
+ *
+ * Two deliberate departures from the IDE, both forced by contrast:
+ *  - Real Darcula panels (#3C3F41) are markedly lighter than the editor (#2B2B2B),
+ *    so one text ramp cannot clear AA on both. Surfaces here stay close to the
+ *    editor background instead.
+ *  - Body text is lifted one step; the signature #A9B7C6 becomes the secondary tone.
+ */
+[data-theme='darcula'] {
+	color-scheme: dark;
+
+	--canvas: #2b2b2b; /* editor background */
+	--surface: #313335; /* tool windows, tabs */
+	--elevated: #35383a; /* text fields */
+	--muted-surface: #3b3e40;
+	--overlay: color-mix(in oklab, #1e1f22 70%, transparent);
+
+	--content: #b4c2d0; /* 7.8:1 on canvas */
+	--secondary: #a9b7c6; /* the signature editor text, 6.9:1 */
+	--muted: #9dabb8; /* 6.0:1 */
+	--faint: #93a1af; /* 5.4:1 */
+
+	--subtle-line: #323232;
+	--line: #4e5254;
+	--focus: #4b6eaf; /* focus ring */
+
+	--accent: #365880; /* default button */
+	--accent-hover: #4b6eaf; /* selection blue */
+	--accent-content: #589df6; /* link */
+	--on-accent: #ffffff;
+
+	--danger: #ff6b68; /* console error */
+	--warning: #ffc66d; /* function-name yellow */
+	--warning-surface: #4a412a;
+	--warning-line: #8a6d3b;
+	--success: #a5c261; /* string green */
+	--success-surface: #38402c;
+	--success-line: #4f6b3a;
+
+	--collection: #499c54; /* Darcula green */
+	--collection-hover: #6a8759; /* string green */
+	--collection-edge: color-mix(in oklab, #a5c261 40%, transparent);
+	--tag: #3592c4; /* Darcula blue */
+	--tag-hover: #6897bb; /* number blue */
+	--tag-edge: color-mix(in oklab, #6897bb 40%, transparent);
+}
