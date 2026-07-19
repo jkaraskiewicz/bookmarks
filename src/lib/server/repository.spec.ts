@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -14,6 +14,7 @@ const {
 	addBookmarks,
 	updateBookmark,
 	deleteBookmark,
+	deleteBookmarks,
 	mergeIntoBookmark,
 	transformBookmark
 } = await import('./repository');
@@ -218,6 +219,54 @@ describe('deleteBookmark', () => {
 		await addBookmark({ url: 'https://a.dev' });
 		await deleteBookmark('https://nope.dev');
 		expect(await readBookmarks()).toHaveLength(1);
+	});
+});
+
+describe('deleteBookmarks', () => {
+	it('removes several in one pass and reports the count', async () => {
+		await addBookmarks([
+			{ url: 'https://a.dev' },
+			{ url: 'https://b.dev' },
+			{ url: 'https://c.dev' }
+		]);
+
+		expect(await deleteBookmarks(['https://a.dev', 'https://c.dev'])).toBe(2);
+		expect((await readBookmarks()).map((b) => b.url)).toEqual(['https://b.dev']);
+	});
+
+	it('ignores URLs that are not there, and counts only what went', async () => {
+		await addBookmark({ url: 'https://a.dev' });
+		expect(await deleteBookmarks(['https://a.dev', 'https://ghost.dev'])).toBe(1);
+		expect(await readBookmarks()).toEqual([]);
+	});
+
+	it('does not rewrite the file when nothing matches', async () => {
+		await addBookmark({ url: 'https://a.dev' });
+		const before = (await stat(file)).mtimeMs;
+		// Comparing contents would not catch this: rewriting the same bookmarks
+		// produces identical bytes. The point is that no write happens at all.
+		await new Promise((resolve) => setTimeout(resolve, 12));
+
+		expect(await deleteBookmarks(['https://ghost.dev'])).toBe(0);
+		expect((await stat(file)).mtimeMs).toBe(before);
+	});
+
+	it('handles an empty list', async () => {
+		await addBookmark({ url: 'https://a.dev' });
+		expect(await deleteBookmarks([])).toBe(0);
+		expect(await readBookmarks()).toHaveLength(1);
+	});
+
+	it('can empty the whole library', async () => {
+		await addBookmarks([{ url: 'https://a.dev' }, { url: 'https://b.dev' }]);
+		expect(await deleteBookmarks(['https://a.dev', 'https://b.dev'])).toBe(2);
+		expect(await readBookmarks()).toEqual([]);
+	});
+
+	it('still backs the single-bookmark delete', async () => {
+		await addBookmarks([{ url: 'https://a.dev' }, { url: 'https://b.dev' }]);
+		await deleteBookmark('https://a.dev');
+		expect((await readBookmarks()).map((b) => b.url)).toEqual(['https://b.dev']);
 	});
 });
 

@@ -15,6 +15,7 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
 - Organize bookmarks with tags and with collections — named folders that can be nested,
   such as `Dev/Frameworks`.
 - Search and filter across the whole library.
+- Select several bookmarks at once to delete them or re-fetch their metadata.
 - Automatic lookup of a page's title, description and icon when a link is added.
 - A map view that arranges bookmarks into clusters based on the tags and collections
   they have in common.

@@ -156,9 +156,20 @@ export function updateBookmark(originalUrl: string, changes: NewBookmark): Promi
 
 /** Delete a bookmark by URL. No-op if it doesn't exist. */
 export function deleteBookmark(url: string): Promise<void> {
+	return deleteBookmarks([url]).then(() => undefined);
+}
+
+/**
+ * Delete many bookmarks in a single read-modify-write, returning how many went. One
+ * transaction rather than one per URL: deleting fifty should not rewrite the file
+ * fifty times, and a partial failure should not leave half of them gone.
+ */
+export function deleteBookmarks(urls: string[]): Promise<number> {
+	const doomed = new Set(urls);
 	return transact((list) => {
-		const next = list.filter((b) => b.url !== url);
-		return { next: next.length !== list.length ? next : undefined, result: undefined };
+		const next = list.filter((bookmark) => !doomed.has(bookmark.url));
+		const removed = list.length - next.length;
+		return { next: removed > 0 ? next : undefined, result: removed };
 	});
 }
 

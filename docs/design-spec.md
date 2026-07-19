@@ -181,6 +181,9 @@ applied at import time, it would generally open to an empty list.
   stops automatically. (No blind timeouts.)
 - A manual **"refresh metadata"** action per bookmark is available to re-fetch (also
   runs in the background with the same "fetching…" indicator).
+- **Fetching is queued with a concurrency limit**, so a bulk refresh or a large import
+  hands over every URL without opening hundreds of sockets at once. Callers no longer
+  guess at a safe batch size; asking twice for a URL already outstanding is a no-op.
 - Failures are non-fatal: the bookmark is kept with whatever data exists; a fetch error
   is surfaced softly (e.g. a small "couldn't fetch" indicator), never blocks saving.
 
@@ -315,6 +318,28 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
   to sRGB and asserts every text-on-background pair clears WCAG AA. It also asserts
   every theme declares the same tokens, since a missing one inherits silently. This
   found a real failure during development: light `--faint` sat at 2.48:1.
+
+### 8d. Multi-select and bulk actions — DECIDED
+
+A checkbox on each row, and one in the list header for select-all. When anything is
+selected, a toolbar appears above the list.
+
+- **Only operations that make sense on many bookmarks** appear: delete, and re-fetch
+  metadata. Editing a title, URL or note is inherently singular, so there is no bulk
+  edit — that is why the row's Edit button stays where it is.
+- **Select-all means what you can see.** With a filter applied it selects only the
+  visible bookmarks, never the whole library; a click can never reach past the filter
+  you are looking at.
+- **Selection survives filtering**, because narrowing a filter to find the next thing
+  to tick is the normal way to build a selection. When that hides some of what is
+  selected, the toolbar says how many — an action still applies to them, so it says so
+  rather than quietly acting on things you cannot see.
+- **Deleting takes a second click** that names the count, since it cannot be undone.
+  Changing the selection cancels a pending confirmation.
+- **Selection is pruned** against what still exists, so a delete elsewhere cannot leave
+  the count reporting more than there is.
+- **Bulk refresh hands the whole selection to the enrichment queue** (§7), which paces
+  the fetching. The logic lives in `$lib/selection.ts`, framework-free and unit-tested.
 
 ## 9. High-Level Architecture
 

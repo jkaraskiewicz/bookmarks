@@ -7,17 +7,28 @@
 	let {
 		bookmark,
 		pending,
+		selected,
 		ontoggleTag,
-		onedit
+		onedit,
+		ontoggleSelect
 	}: {
 		bookmark: Bookmark;
 		pending: boolean;
+		selected: boolean;
 		ontoggleTag: (tag: string) => void;
 		onedit: (bookmark: Bookmark) => void;
+		ontoggleSelect: (url: string) => void;
 	} = $props();
 </script>
 
-<li class="group flex items-center gap-3 py-2">
+<li class="group flex items-center gap-3 py-2 {selected ? 'bg-accent/10' : ''}">
+	<input
+		type="checkbox"
+		checked={selected}
+		onchange={() => ontoggleSelect(bookmark.url)}
+		class="size-4 shrink-0 rounded border-line text-accent focus:ring-focus"
+		aria-label="Select {bookmark.title}"
+	/>
 	{#if pending}
 		<span
 			class="size-4 shrink-0 animate-pulse rounded-sm bg-accent-hover/50"

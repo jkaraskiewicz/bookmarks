@@ -7,9 +7,11 @@
 	import AddBar from '$lib/components/AddBar.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import BookmarkList from '$lib/components/BookmarkList.svelte';
+	import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 	import EditDialog from '$lib/components/EditDialog.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
 	import { secondaryButton } from '$lib/components/ui';
+	import { hiddenSelectedCount, pruneSelection, toggleAll, toggleOne } from '$lib/selection';
 	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -18,6 +20,8 @@
 	let activeTags = $state<string[]>([]);
 	let activeCollection = $state('');
 	let editing = $state<Bookmark | null>(null);
+	/** URLs ticked for a bulk action. Survives filtering; see $lib/selection. */
+	let selected = $state<ReadonlySet<string>>(new Set());
 
 	const tags = $derived(allTags(data.bookmarks));
 	const collectionTree = $derived(buildCollectionTree(data.bookmarks));
@@ -31,6 +35,17 @@
 	const errorMessage = $derived(
 		form && 'message' in form && !('existing' in form) ? form.message : null
 	);
+
+	const visibleUrls = $derived(filtered.map((bookmark) => bookmark.url));
+	const selectedUrls = $derived([...selected]);
+	const hiddenSelected = $derived(hiddenSelectedCount(visibleUrls, selected));
+
+	// Deleting, or an edit that changes a URL, can strand keys in the selection.
+	$effect(() => {
+		const alive = data.bookmarks.map((bookmark) => bookmark.url);
+		const pruned = pruneSelection(selected, alive);
+		if (pruned.size !== selected.size) selected = pruned;
+	});
 
 	// While anything is being enriched, re-run the load to pick up results, then stop.
 	$effect(() => {
@@ -78,13 +93,26 @@
 			{activeTags}
 			ontoggleTag={toggleTag}
 		/>
-		<BookmarkList
-			bookmarks={filtered}
-			total={data.bookmarks.length}
-			{pendingSet}
-			ontoggleTag={toggleTag}
-			onedit={(bookmark) => (editing = bookmark)}
-		/>
+		<div class="min-w-0 flex-1">
+			{#if selectedUrls.length > 0}
+				<SelectionToolbar
+					selected={selectedUrls}
+					hiddenCount={hiddenSelected}
+					onclear={() => (selected = new Set())}
+					ondone={() => (selected = new Set())}
+				/>
+			{/if}
+			<BookmarkList
+				bookmarks={filtered}
+				total={data.bookmarks.length}
+				{pendingSet}
+				{selected}
+				ontoggleTag={toggleTag}
+				onedit={(bookmark) => (editing = bookmark)}
+				ontoggleSelect={(url) => (selected = toggleOne(url, selected))}
+				ontoggleAll={() => (selected = toggleAll(visibleUrls, selected))}
+			/>
+		</div>
 	</div>
 </div>
 

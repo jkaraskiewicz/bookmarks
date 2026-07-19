@@ -10,9 +10,6 @@ import { addBookmarks } from '$lib/server/repository';
 import { listChromeProfiles, readChromeBookmarksJson } from '$lib/server/chromeProfile';
 import { refreshMetadataInBackground } from '$lib/server/enrichment';
 
-/** How many freshly imported bookmarks we enrich right away, to avoid a fetch storm. */
-const ENRICH_LIMIT = 25;
-
 function readOptions(form: FormData): ImportOptions {
 	return {
 		collectionPrefix: String(form.get('collectionPrefix') ?? '').trim() || undefined,
@@ -30,10 +27,10 @@ async function runImport(items: ImportItem[], options: ImportOptions) {
 
 	const summary: ImportSummary = await addBookmarks(prepared);
 
-	// Imported entries have a title but no description/favicon; fill the first batch in.
-	for (const item of prepared.slice(0, ENRICH_LIMIT)) {
-		refreshMetadataInBackground(item.url);
-	}
+	// Imported entries have a title but no description or icon. Hand the lot to the
+	// enrichment queue, which paces the fetching; previously this enriched only the
+	// first 25 and silently left the rest bare.
+	for (const item of prepared) refreshMetadataInBackground(item.url);
 
 	return { summary };
 }

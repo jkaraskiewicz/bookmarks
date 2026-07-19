@@ -7,6 +7,7 @@ import {
 	addBookmark,
 	updateBookmark,
 	deleteBookmark,
+	deleteBookmarks,
 	mergeIntoBookmark
 } from '$lib/server/repository';
 import { refreshMetadataInBackground, pendingMetadata } from '$lib/server/enrichment';
@@ -21,6 +22,11 @@ function readFields(form: FormData): NewBookmark {
 		collection: String(form.get('collection') ?? ''),
 		notes: String(form.get('notes') ?? '')
 	};
+}
+
+/** Read the repeated `url` fields a bulk action submits. */
+function selectedUrls(form: FormData): string[] {
+	return form.getAll('url').map(String).filter(Boolean);
 }
 
 /** Read the `url` field from a submitted form. */
@@ -95,5 +101,27 @@ export const actions: Actions = {
 			if (!url) throw invalid('Missing URL.');
 			refreshMetadataInBackground(url);
 			return { refreshed: url };
+		}),
+
+	/** Delete every selected bookmark in one transaction. */
+	deleteSelected: ({ request }) =>
+		guard(async () => {
+			const urls = selectedUrls(await request.formData());
+			if (urls.length === 0) throw invalid('Nothing selected.');
+
+			const deleted = await deleteBookmarks(urls);
+			return { deleted, action: 'delete' as const };
+		}),
+
+	/** Queue a metadata refresh for every selected bookmark. */
+	refreshSelected: ({ request }) =>
+		guard(async () => {
+			const urls = selectedUrls(await request.formData());
+			if (urls.length === 0) throw invalid('Nothing selected.');
+
+			// The enrichment queue paces these, so handing over the whole selection is
+			// safe however large it is.
+			for (const url of urls) refreshMetadataInBackground(url);
+			return { refreshing: urls.length, action: 'refresh' as const };
 		})
 };
