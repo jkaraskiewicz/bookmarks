@@ -19,6 +19,6 @@
 
 <section class={cardClass}>
 	<h2 class="font-medium">{title}</h2>
-	<p class="mt-1 text-sm text-neutral-400">{@render description()}</p>
+	<p class="mt-1 text-sm text-muted">{@render description()}</p>
 	{@render children()}
 </section>

@@ -4,6 +4,7 @@
 	import ImportOptionFields from '$lib/components/ImportOptionFields.svelte';
 	import ImportCard from '$lib/components/ImportCard.svelte';
 	import ImportSummary from '$lib/components/ImportSummary.svelte';
+	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -16,12 +17,13 @@
 
 <svelte:head><title>Bookmarks · Import</title></svelte:head>
 
-<div class="min-h-screen bg-neutral-900 text-neutral-100">
-	<header class="border-b border-neutral-800 bg-neutral-950/60 px-6 py-4">
+<div class="min-h-screen bg-canvas text-content">
+	<header class="border-b border-subtle bg-surface px-6 py-4">
 		<div class="mx-auto flex max-w-3xl items-center gap-4">
 			<h1 class="text-lg font-semibold tracking-tight">🔖 Import bookmarks</h1>
 			<div class="flex-1"></div>
-			<a href="/" class="text-sm text-neutral-400 hover:text-neutral-100">← Back to list</a>
+			<a href="/" class="text-sm text-muted hover:text-content">← Back to list</a>
+			<ThemeToggle />
 		</div>
 	</header>
 
@@ -31,7 +33,7 @@
 		{/if}
 		{#if errorMessage}
 			<p
-				class="rounded-md border border-amber-800 bg-amber-950/40 px-4 py-3 text-sm text-amber-300"
+				class="rounded-md border border-warning-line bg-warning-surface px-4 py-3 text-sm text-warning"
 			>
 				{errorMessage}
 			</p>
@@ -40,14 +42,14 @@
 		<ImportCard title="From Chrome directly">
 			{#snippet description()}
 				Reads Chrome's bookmarks straight from your profile — no export needed. To grab every open
-				tab first, press <kbd class="rounded bg-neutral-800 px-1.5 py-0.5 text-xs">⇧⌘D</kbd> in Chrome
-				("Bookmark all tabs…"), save them to a new folder, then import just that folder below.
+				tab first, press <kbd class="rounded bg-elevated px-1.5 py-0.5 text-xs">⇧⌘D</kbd> in Chrome ("Bookmark
+				all tabs…"), save them to a new folder, then import just that folder below.
 			{/snippet}
 
 			{#if data.profiles.length}
 				<form method="POST" action="?/profile" class="mt-4 space-y-3">
 					<label class="block text-sm">
-						<span class="text-neutral-400">Profile</span>
+						<span class="text-muted">Profile</span>
 						<select name="profile" class="mt-1 {fieldClass}">
 							{#each data.profiles as profile (profile.dir)}
 								<option value={profile.dir}>{profile.dir} — {profile.count} bookmarks</option>
@@ -56,7 +58,7 @@
 					</label>
 
 					<label class="block text-sm">
-						<span class="text-neutral-400">Only this folder (optional)</span>
+						<span class="text-muted">Only this folder (optional)</span>
 						<input
 							name="onlyCollection"
 							list="chrome-folders"
@@ -74,7 +76,7 @@
 					<button class={primaryButton} type="submit">Import from Chrome</button>
 				</form>
 			{:else}
-				<p class="mt-3 text-sm text-neutral-500">
+				<p class="mt-3 text-sm text-faint">
 					No Chrome profile found on this machine. Use the file upload below instead.
 				</p>
 			{/if}
@@ -82,7 +84,7 @@
 
 		<ImportCard title="From an exported bookmarks file">
 			{#snippet description()}
-				In Chrome: <code class="text-neutral-300">chrome://bookmarks</code> → ⋮ → Export bookmarks. Firefox,
+				In Chrome: <code class="text-secondary">chrome://bookmarks</code> → ⋮ → Export bookmarks. Firefox,
 				Safari and Edge export the same format.
 			{/snippet}
 
@@ -91,7 +93,7 @@
 					type="file"
 					name="file"
 					accept=".html,.htm,text/html"
-					class="block w-full text-sm text-neutral-300 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-800 file:px-3 file:py-1.5 file:text-sm file:text-neutral-200 hover:file:bg-neutral-700"
+					class="block w-full text-sm text-secondary file:mr-3 file:rounded-md file:border-0 file:bg-elevated file:px-3 file:py-1.5 file:text-sm file:text-content hover:file:bg-muted-surface"
 				/>
 				<ImportOptionFields />
 				<button class={primaryButton} type="submit">Import file</button>

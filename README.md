@@ -19,7 +19,30 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
 - A map view that arranges bookmarks into clusters based on the tags and collections
   they have in common.
 - Import from Chrome and other browsers, and export back out again.
+- Light and dark themes, following your system by default.
 - Plain-text storage that you can also edit by hand.
+
+## Themes
+
+The button in the top-right corner cycles between **Dark**, **Light** and **System**.
+System follows your operating system's setting and changes with it; the other two stay
+put. Your choice is remembered in the browser, and applied before the first paint so
+the page never flashes the wrong colours.
+
+### Adding a theme
+
+Themes are defined entirely in CSS. Components never name a colour — they name a role
+such as `bg-surface` or `text-muted` — so a new theme needs no component changes.
+
+1. Copy a block in `src/lib/theme/palettes.css`, give it a new `data-theme` name and
+   change the values. Every variable in the block must be present; a missing one
+   silently inherits from the theme above it.
+2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label and icon.
+
+`npm test` then checks the new theme automatically: every text-on-background pair must
+meet the WCAG AA contrast minimum, and the theme must declare the same set of variables
+as the others. Both checks read `palettes.css` directly, so they cover themes added
+later without anyone having to remember to test them.
 
 ## Requirements
 

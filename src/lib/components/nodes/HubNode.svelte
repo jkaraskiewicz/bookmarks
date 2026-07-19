@@ -23,14 +23,14 @@
 
 	const colours = $derived(
 		hub.kind === 'tag'
-			? 'bg-sky-600/85 hover:bg-sky-500 border-sky-400/40'
-			: 'bg-emerald-700/85 hover:bg-emerald-600 border-emerald-400/40'
+			? 'bg-tag hover:bg-tag-hover border-tag-edge'
+			: 'bg-collection hover:bg-collection-hover border-collection-edge'
 	);
 </script>
 
 <div
-	class="flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-medium text-white shadow-lg transition {colours}
-		{hub.expanded ? 'ring-2 ring-white/50' : ''}"
+	class="flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-medium text-on-accent shadow-lg transition {colours}
+		{hub.expanded ? 'ring-2 ring-on-accent/50' : ''}"
 	style="font-size: {(scale * 0.8).toFixed(2)}rem"
 	title={hub.expanded ? 'Click to collapse' : `Click to show ${hub.count} bookmarks`}
 >

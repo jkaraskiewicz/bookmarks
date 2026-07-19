@@ -4,6 +4,7 @@
 	import '@xyflow/svelte/dist/style.css';
 	import type { Bookmark } from '$lib/types';
 	import { buildGraph } from '$lib/graph';
+	import { theme } from '$lib/theme/theme.svelte';
 	import { edgeStyle, edgeLabel } from '$lib/graph/edgeStyle';
 	import { layoutGraph, type Point } from '$lib/graph/layout';
 	import BookmarkNode from './nodes/BookmarkNode.svelte';
@@ -71,7 +72,7 @@
 		bind:edges
 		{nodeTypes}
 		fitView
-		colorMode="dark"
+		colorMode={theme.current}
 		minZoom={0.1}
 		nodesConnectable={false}
 		onnodeclick={toggleHub}

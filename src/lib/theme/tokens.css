@@ -1,0 +1,53 @@
+/**
+ * The design tokens the interface is built from.
+ *
+ * Components name a *role* (`bg-surface`, `text-muted`) rather than a colour
+ * (`bg-neutral-950`, `text-neutral-400`). A theme is then a set of values for these
+ * roles, and adding one means writing a block in `palettes.css` — no component changes.
+ *
+ * `@theme inline` matters: it makes the generated utilities reference the custom
+ * property at runtime instead of baking in a literal, which is what lets a theme swap
+ * take effect without rebuilding the CSS.
+ */
+@theme inline {
+	/* Surfaces, from furthest back to closest to the reader. */
+	--color-canvas: var(--canvas);
+	--color-surface: var(--surface);
+	--color-elevated: var(--elevated);
+	--color-muted-surface: var(--muted-surface);
+	--color-overlay: var(--overlay);
+
+	/* Text, from most to least prominent. */
+	--color-content: var(--content);
+	--color-secondary: var(--secondary);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+
+	/* Lines. */
+	--color-subtle: var(--subtle-line);
+	--color-line: var(--line);
+	--color-focus: var(--focus);
+
+	/* The one colour that means "do this". */
+	--color-accent: var(--accent);
+	--color-accent-hover: var(--accent-hover);
+	--color-accent-content: var(--accent-content);
+	--color-on-accent: var(--on-accent);
+
+	/* Outcomes. */
+	--color-danger: var(--danger);
+	--color-warning: var(--warning);
+	--color-warning-surface: var(--warning-surface);
+	--color-warning-line: var(--warning-line);
+	--color-success: var(--success);
+	--color-success-surface: var(--success-surface);
+	--color-success-line: var(--success-line);
+
+	/* Graph node kinds — the map's own vocabulary. */
+	--color-collection: var(--collection);
+	--color-collection-hover: var(--collection-hover);
+	--color-collection-edge: var(--collection-edge);
+	--color-tag: var(--tag);
+	--color-tag-hover: var(--tag-hover);
+	--color-tag-edge: var(--tag-edge);
+}

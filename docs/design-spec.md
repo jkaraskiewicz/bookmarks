@@ -286,6 +286,31 @@ metadata enrichment (a cap, to avoid a fetch storm when importing a large librar
 into any browser. Note the format stores whole-second dates, so sub-second precision is
 lost on a round trip.
 
+### 8c. Theming — DECIDED
+
+Two themes ship, light and dark, and adding more is meant to be cheap.
+
+- **Components name roles, not colours.** `bg-surface`, `text-muted`, `border-line`
+  rather than `bg-neutral-950`, `text-neutral-400`. This is the whole abstraction: a
+  theme is a set of values for those roles, so adding one touches no component.
+- **Tokens are CSS custom properties** mapped onto Tailwind utilities through
+  `@theme inline` (`theme/tokens.css`). `inline` matters — it makes the utility
+  reference the variable at runtime rather than baking in a literal, which is what
+  allows a theme to be swapped without rebuilding the CSS.
+- **A theme is one block** in `theme/palettes.css` keyed by `[data-theme='…']`, plus an
+  entry in the `THEMES` list. Nothing else.
+- **Preference is `dark` | `light` | `system`**, stored in `localStorage`. `system`
+  follows `prefers-color-scheme` live. The resolved theme is written to
+  `document.documentElement.dataset.theme`.
+- **No flash of the wrong theme:** a small inline script in `app.html` applies the
+  stored choice before first paint. It duplicates `resolveTheme()`'s logic by necessity
+  — it must run before any module loads — and says so in a comment.
+- **Legibility is enforced, not assumed.** `contrast.spec.ts` parses `palettes.css`,
+  resolves the token graph (including `var()` and `color-mix()`), converts oklch/oklab
+  to sRGB and asserts every text-on-background pair clears WCAG AA. It also asserts
+  every theme declares the same tokens, since a missing one inherits silently. This
+  found a real failure during development: light `--faint` sat at 2.48:1.
+
 ## 9. High-Level Architecture
 
 ```

@@ -18,14 +18,12 @@
 </script>
 
 <main class="min-w-0 flex-1">
-	<p class="mb-3 text-xs text-neutral-500">
+	<p class="mb-3 text-xs text-faint">
 		{bookmarks.length} of {total} bookmark{total === 1 ? '' : 's'}
 	</p>
 
 	{#if total === 0}
-		<p class="text-sm text-neutral-500">
-			No bookmarks yet. Paste a URL above to add your first one.
-		</p>
+		<p class="text-sm text-faint">No bookmarks yet. Paste a URL above to add your first one.</p>
 	{:else}
 		<ul class="divide-y divide-neutral-800">
 			{#each bookmarks as bookmark (bookmark.url)}

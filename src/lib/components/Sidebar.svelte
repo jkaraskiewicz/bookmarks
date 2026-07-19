@@ -28,15 +28,13 @@
 
 	{#if collectionTree.length}
 		<div>
-			<h2 class="mb-1.5 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
-				Collections
-			</h2>
+			<h2 class="mb-1.5 text-xs font-semibold tracking-wide text-faint uppercase">Collections</h2>
 			<div class="space-y-0.5 text-sm">
 				<button
-					class="block w-full rounded px-2 py-0.5 text-left hover:bg-neutral-800 {activeCollection ===
+					class="block w-full rounded px-2 py-0.5 text-left hover:bg-elevated {activeCollection ===
 					''
-						? 'text-blue-400'
-						: 'text-neutral-300'}"
+						? 'text-accent-content'
+						: 'text-secondary'}"
 					onclick={() => onselectCollection('')}>All</button
 				>
 				<CollectionTree

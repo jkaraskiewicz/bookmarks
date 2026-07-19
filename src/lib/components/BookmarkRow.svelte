@@ -19,7 +19,9 @@
 
 <li class="group flex items-center gap-3 py-2">
 	{#if pending}
-		<span class="size-4 shrink-0 animate-pulse rounded-sm bg-blue-500/50" title="Fetching metadata…"
+		<span
+			class="size-4 shrink-0 animate-pulse rounded-sm bg-accent-hover/50"
+			title="Fetching metadata…"
 		></span>
 	{:else if bookmark.favicon}
 		<img
@@ -29,7 +31,7 @@
 			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
 		/>
 	{:else}
-		<span class="size-4 shrink-0 rounded-sm bg-neutral-700"></span>
+		<span class="size-4 shrink-0 rounded-sm bg-muted-surface"></span>
 	{/if}
 
 	<div class="min-w-0 flex-1">
@@ -37,20 +39,20 @@
 			href={bookmark.url}
 			target="_blank"
 			rel="noreferrer"
-			class="truncate font-medium text-neutral-100 hover:text-blue-400"
+			class="truncate font-medium text-content hover:text-accent-content"
 			title={bookmark.description || bookmark.url}>{bookmark.title}</a
 		>
-		<span class="ml-2 text-xs text-neutral-500">{hostname(bookmark.url)}</span>
+		<span class="ml-2 text-xs text-faint">{hostname(bookmark.url)}</span>
 		{#if bookmark.collection}
-			<span class="ml-2 text-xs text-neutral-600">/ {bookmark.collection}</span>
+			<span class="ml-2 text-xs text-faint">/ {bookmark.collection}</span>
 		{/if}
 		{#if pending}
-			<span class="ml-2 animate-pulse text-xs text-blue-400">fetching…</span>
+			<span class="ml-2 animate-pulse text-xs text-accent-content">fetching…</span>
 		{/if}
 		{#if bookmark.notes}
-			<p class="truncate text-xs text-neutral-500">{bookmark.notes}</p>
+			<p class="truncate text-xs text-faint">{bookmark.notes}</p>
 		{:else if bookmark.description}
-			<p class="truncate text-xs text-neutral-600 italic">{bookmark.description}</p>
+			<p class="truncate text-xs text-faint italic">{bookmark.description}</p>
 		{/if}
 	</div>
 
@@ -58,7 +60,7 @@
 		{#each bookmark.tags as tag (tag)}
 			<button
 				onclick={() => ontoggleTag(tag)}
-				class="rounded-full bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700"
+				class="rounded-full bg-elevated px-1.5 py-0.5 text-xs text-muted hover:bg-muted-surface"
 				>#{tag}</button
 			>
 		{/each}
@@ -67,16 +69,16 @@
 	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
 		<button
 			onclick={() => onedit(bookmark)}
-			class="{iconButton} w-auto px-1.5 hover:text-neutral-100"
+			class="{iconButton} w-auto px-1.5 hover:text-content"
 			title="Edit">Edit</button
 		>
 		<form method="POST" action="?/refresh" use:enhance class="contents">
 			<input type="hidden" name="url" value={bookmark.url} />
-			<button class="{iconButton} hover:text-neutral-100" title="Re-fetch metadata">↻</button>
+			<button class="{iconButton} hover:text-content" title="Re-fetch metadata">↻</button>
 		</form>
 		<form method="POST" action="?/delete" use:enhance class="contents">
 			<input type="hidden" name="url" value={bookmark.url} />
-			<button class="{iconButton} hover:text-red-400" title="Delete">✕</button>
+			<button class="{iconButton} hover:text-danger" title="Delete">✕</button>
 		</form>
 	</div>
 </li>

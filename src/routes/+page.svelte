@@ -10,6 +10,7 @@
 	import EditDialog from '$lib/components/EditDialog.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
 	import { secondaryButton } from '$lib/components/ui';
+	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -52,17 +53,18 @@
 	{#each collectionPaths as path (path)}<option value={path}></option>{/each}
 </datalist>
 
-<div class="min-h-screen bg-neutral-900 text-neutral-100">
-	<header class="border-b border-neutral-800 bg-neutral-950/60 px-6 py-4">
+<div class="min-h-screen bg-canvas text-content">
+	<header class="border-b border-subtle bg-surface px-6 py-4">
 		<div class="mx-auto flex max-w-5xl items-start gap-4">
 			<div class="min-w-0 flex-1"><AddBar /></div>
 			<ViewToggle />
 			<a href="/import" class="shrink-0 {secondaryButton}" title="Import & export bookmarks"
 				>Import</a
 			>
+			<ThemeToggle />
 		</div>
 		{#if errorMessage}
-			<p class="mx-auto mt-2 max-w-5xl text-sm text-amber-400">{errorMessage}</p>
+			<p class="mx-auto mt-2 max-w-5xl text-sm text-warning">{errorMessage}</p>
 		{/if}
 	</header>
 

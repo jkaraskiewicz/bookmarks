@@ -7,7 +7,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4"
+	class="fixed inset-0 z-10 flex items-center justify-center bg-overlay p-4"
 	onclick={(e) => e.target === e.currentTarget && onclose()}
 	role="presentation"
 >
@@ -19,25 +19,25 @@
 				await update();
 				onclose();
 			}}
-		class="w-full max-w-md space-y-3 rounded-lg border border-neutral-700 bg-neutral-900 p-5 text-neutral-100"
+		class="w-full max-w-md space-y-3 rounded-lg border border-line bg-canvas p-5 text-content"
 	>
 		<h2 class="text-base font-semibold">Edit bookmark</h2>
 		<input type="hidden" name="originalUrl" value={bookmark.url} />
 
 		<label class="block text-sm">
-			<span class="text-neutral-400">Title</span>
+			<span class="text-muted">Title</span>
 			<input name="title" value={bookmark.title} class="mt-1 {fieldClass}" />
 		</label>
 		<label class="block text-sm">
-			<span class="text-neutral-400">URL</span>
+			<span class="text-muted">URL</span>
 			<input name="url" value={bookmark.url} class="mt-1 {fieldClass}" />
 		</label>
 		<label class="block text-sm">
-			<span class="text-neutral-400">Tags (comma separated)</span>
+			<span class="text-muted">Tags (comma separated)</span>
 			<input name="tags" value={bookmark.tags.join(', ')} class="mt-1 {fieldClass}" />
 		</label>
 		<label class="block text-sm">
-			<span class="text-neutral-400">Collection</span>
+			<span class="text-muted">Collection</span>
 			<input
 				name="collection"
 				value={bookmark.collection ?? ''}
@@ -46,15 +46,15 @@
 			/>
 		</label>
 		<label class="block text-sm">
-			<span class="text-neutral-400">Notes</span>
+			<span class="text-muted">Notes</span>
 			<textarea name="notes" rows="3" class="mt-1 {fieldClass}">{bookmark.notes ?? ''}</textarea>
 		</label>
 
 		{#if bookmark.description}
 			<div class="text-sm">
-				<span class="text-neutral-400">Description (auto-fetched)</span>
+				<span class="text-muted">Description (auto-fetched)</span>
 				<p
-					class="mt-1 rounded-md border border-neutral-800 bg-neutral-800/40 px-3 py-1.5 text-sm text-neutral-300"
+					class="mt-1 rounded-md border border-subtle bg-elevated px-3 py-1.5 text-sm text-secondary"
 				>
 					{bookmark.description}
 				</p>

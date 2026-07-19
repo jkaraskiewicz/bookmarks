@@ -1,3 +1,7 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* Theme values first, then the token layer that maps them onto utility names. */
+@import '../lib/theme/palettes.css';
+@import '../lib/theme/tokens.css';

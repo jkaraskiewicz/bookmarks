@@ -10,14 +10,13 @@
 		type="button"
 		onclick={() => (open = !open)}
 		aria-expanded={open}
-		class="text-sm text-neutral-400 hover:text-neutral-100"
-		>{open ? 'Options −' : 'Options +'}</button
+		class="text-sm text-muted hover:text-content">{open ? 'Options −' : 'Options +'}</button
 	>
 
 	{#if open}
 		<div class="mt-2 grid grid-cols-2 gap-2">
 			<label class="block text-sm">
-				<span class="text-neutral-400">Put under collection</span>
+				<span class="text-muted">Put under collection</span>
 				<input
 					name="collectionPrefix"
 					placeholder="e.g. Imported"
@@ -26,7 +25,7 @@
 				/>
 			</label>
 			<label class="block text-sm">
-				<span class="text-neutral-400">Tag everything with</span>
+				<span class="text-muted">Tag everything with</span>
 				<input name="extraTags" placeholder="chrome, to-read" class="mt-1 {fieldClass}" />
 			</label>
 		</div>

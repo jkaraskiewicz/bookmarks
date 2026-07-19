@@ -3,6 +3,7 @@
 	import GraphView from '$lib/components/GraphView.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
 	import { inputBase } from '$lib/components/ui';
+	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -12,8 +13,8 @@
 
 <svelte:head><title>Bookmarks · Graph</title></svelte:head>
 
-<div class="flex h-dvh flex-col bg-neutral-900 text-neutral-100">
-	<header class="flex items-center gap-4 border-b border-neutral-800 bg-neutral-950/60 px-6 py-4">
+<div class="flex h-dvh flex-col bg-canvas text-content">
+	<header class="flex items-center gap-4 border-b border-subtle bg-surface px-6 py-4">
 		<h1 class="text-lg font-semibold tracking-tight whitespace-nowrap">🔖 Bookmarks</h1>
 		<input
 			bind:value={search}
@@ -23,13 +24,14 @@
 		/>
 		<div class="flex-1"></div>
 		<ViewToggle />
+		<ThemeToggle />
 	</header>
 
 	<div class="min-h-0 flex-1">
 		{#if data.bookmarks.length}
 			<GraphView bookmarks={data.bookmarks} {search} />
 		{:else}
-			<p class="p-6 text-sm text-neutral-500">
+			<p class="p-6 text-sm text-faint">
 				No bookmarks yet. Add some in the list view to see them here.
 			</p>
 		{/if}

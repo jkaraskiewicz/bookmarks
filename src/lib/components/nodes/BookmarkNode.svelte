@@ -14,7 +14,7 @@
 	target="_blank"
 	rel="noreferrer"
 	title={bookmark.url}
-	class="flex max-w-[190px] items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-800/95 px-2 py-1 text-[11px] text-neutral-200 no-underline shadow hover:border-blue-500 hover:text-white"
+	class="flex max-w-[190px] items-center gap-1.5 rounded-md border border-line bg-elevated px-2 py-1 text-[11px] text-content no-underline shadow hover:border-focus hover:text-content"
 >
 	{#if bookmark.favicon}
 		<img
@@ -24,7 +24,7 @@
 			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
 		/>
 	{:else}
-		<span class="size-3.5 shrink-0 rounded-sm bg-neutral-700"></span>
+		<span class="size-3.5 shrink-0 rounded-sm bg-muted-surface"></span>
 	{/if}
 	<span class="truncate">{bookmark.label}</span>
 </a>

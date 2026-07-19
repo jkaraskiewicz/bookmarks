@@ -18,8 +18,7 @@
 	} = $props();
 
 	// Smaller than the shared secondary button, to sit inside the notice.
-	const actionClass =
-		'rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-800';
+	const actionClass = 'rounded border border-line px-2 py-1 text-xs text-content hover:bg-elevated';
 </script>
 
 <!--
@@ -27,15 +26,15 @@
 	picks the server action and the hidden inputs carry the extra fields. No form
 	mutation, so the form's own action never gets left pointing somewhere else.
 -->
-<div class="mt-2 rounded-md border border-amber-800 bg-amber-950/40 px-3 py-2 text-sm">
-	<p class="text-amber-300">{message}</p>
+<div class="mt-2 rounded-md border border-warning-line bg-warning-surface px-3 py-2 text-sm">
+	<p class="text-warning">{message}</p>
 
-	<p class="mt-1 truncate text-neutral-300">
+	<p class="mt-1 truncate text-secondary">
 		<a href={existing.url} target="_blank" rel="noreferrer" class="hover:underline"
 			>{existing.title}</a
 		>
-		<span class="text-neutral-500">· {hostname(existing.url)}</span>
-		{#if existing.collection}<span class="text-neutral-500">· in {existing.collection}</span>{/if}
+		<span class="text-faint">· {hostname(existing.url)}</span>
+		{#if existing.collection}<span class="text-faint">· in {existing.collection}</span>{/if}
 	</p>
 
 	<input type="hidden" name="existingUrl" value={existing.url} />

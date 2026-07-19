@@ -1,0 +1,89 @@
+/**
+ * One block per theme. To add a theme: copy a block, change the values, give it a new
+ * `data-theme` name, and register that name in `theme/index.ts`. Nothing else changes.
+ *
+ * Every block must define every variable — a missing one silently inherits from the
+ * block above it, which is how a theme ends up with one stray dark colour in it.
+ */
+
+/* Dark — the default, and what applies before the theme script runs. */
+:root,
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	--canvas: var(--color-neutral-900);
+	--surface: color-mix(in oklab, var(--color-neutral-950) 60%, transparent);
+	--elevated: var(--color-neutral-800);
+	--muted-surface: var(--color-neutral-700);
+	--overlay: color-mix(in oklab, black 60%, transparent);
+
+	/* Every step clears WCAG AA (4.5:1) on the canvas; see theme/contrast.spec.ts. */
+	--content: var(--color-neutral-100); /* 16.4:1 */
+	--secondary: var(--color-neutral-200); /* 14.2:1 */
+	--muted: var(--color-neutral-300); /* 12.1:1 */
+	--faint: var(--color-neutral-400); /*  6.9:1 */
+
+	--subtle-line: var(--color-neutral-800);
+	--line: var(--color-neutral-700);
+	--focus: var(--color-blue-500);
+
+	--accent: var(--color-blue-600);
+	--accent-hover: var(--color-blue-500);
+	--accent-content: var(--color-blue-400);
+	--on-accent: white;
+
+	--danger: var(--color-red-400);
+	--warning: var(--color-amber-300);
+	--warning-surface: color-mix(in oklab, var(--color-amber-950) 40%, transparent);
+	--warning-line: var(--color-amber-800);
+	--success: var(--color-green-300);
+	--success-surface: color-mix(in oklab, var(--color-green-950) 40%, transparent);
+	--success-line: var(--color-green-800);
+
+	--collection: color-mix(in oklab, var(--color-emerald-700) 85%, transparent);
+	--collection-hover: var(--color-emerald-600);
+	--collection-edge: color-mix(in oklab, var(--color-emerald-400) 40%, transparent);
+	--tag: color-mix(in oklab, var(--color-sky-600) 85%, transparent);
+	--tag-hover: var(--color-sky-500);
+	--tag-edge: color-mix(in oklab, var(--color-sky-400) 40%, transparent);
+}
+
+/* Light. */
+[data-theme='light'] {
+	color-scheme: light;
+
+	--canvas: var(--color-neutral-50);
+	--surface: color-mix(in oklab, white 75%, transparent);
+	--elevated: white;
+	--muted-surface: var(--color-neutral-200);
+	--overlay: color-mix(in oklab, var(--color-neutral-900) 35%, transparent);
+
+	--content: var(--color-neutral-900); /* 17.2:1 */
+	--secondary: var(--color-neutral-700); /*  9.9:1 */
+	--muted: var(--color-neutral-600); /*  7.5:1 */
+	--faint: var(--color-neutral-500); /*  4.5:1 */
+
+	--subtle-line: var(--color-neutral-200);
+	--line: var(--color-neutral-300);
+	--focus: var(--color-blue-500);
+
+	--accent: var(--color-blue-600);
+	--accent-hover: var(--color-blue-700);
+	--accent-content: var(--color-blue-700);
+	--on-accent: white;
+
+	--danger: var(--color-red-600);
+	--warning: var(--color-amber-800);
+	--warning-surface: var(--color-amber-50);
+	--warning-line: var(--color-amber-300);
+	--success: var(--color-green-800);
+	--success-surface: var(--color-green-50);
+	--success-line: var(--color-green-300);
+
+	--collection: var(--color-emerald-600);
+	--collection-hover: var(--color-emerald-700);
+	--collection-edge: color-mix(in oklab, var(--color-emerald-800) 30%, transparent);
+	--tag: var(--color-sky-600);
+	--tag-hover: var(--color-sky-700);
+	--tag-edge: color-mix(in oklab, var(--color-sky-800) 30%, transparent);
+}
