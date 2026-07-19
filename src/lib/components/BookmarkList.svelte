@@ -66,6 +66,7 @@
 					{bookmark}
 					pending={pendingSet.has(bookmark.url)}
 					selected={selected.has(bookmark.url)}
+					selecting={selected.size > 0}
 					{ontoggleTag}
 					{onedit}
 					{ontoggleSelect}

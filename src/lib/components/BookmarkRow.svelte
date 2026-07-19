@@ -8,6 +8,7 @@
 		bookmark,
 		pending,
 		selected,
+		selecting,
 		ontoggleTag,
 		onedit,
 		ontoggleSelect
@@ -15,35 +16,52 @@
 		bookmark: Bookmark;
 		pending: boolean;
 		selected: boolean;
+		/** True once anything is selected, so every row shows its checkbox. */
+		selecting: boolean;
 		ontoggleTag: (tag: string) => void;
 		onedit: (bookmark: Bookmark) => void;
 		ontoggleSelect: (url: string) => void;
 	} = $props();
+
+	/**
+	 * The checkbox shares the icon's slot instead of taking a column of its own.
+	 * Rows are read far more often than they are selected, so a checkbox on every
+	 * row is clutter most of the time — but it has to stay one movement away, and
+	 * reachable by keyboard.
+	 */
+	const pinned = $derived(selected || selecting);
 </script>
 
 <li class="group flex items-center gap-3 py-2 {selected ? 'bg-accent/10' : ''}">
-	<input
-		type="checkbox"
-		checked={selected}
-		onchange={() => ontoggleSelect(bookmark.url)}
-		class="size-4 shrink-0 rounded border-line text-accent focus:ring-focus"
-		aria-label="Select {bookmark.title}"
-	/>
-	{#if pending}
-		<span
-			class="size-4 shrink-0 animate-pulse rounded-sm bg-accent-hover/50"
-			title="Fetching metadata…"
-		></span>
-	{:else if bookmark.favicon}
-		<img
-			src={bookmark.favicon}
-			alt=""
-			class="size-4 shrink-0 rounded-sm"
-			onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
+	<div class="relative size-4 shrink-0">
+		<span class="block transition-opacity {pinned ? 'opacity-0' : 'group-hover:opacity-0'}">
+			{#if pending}
+				<span
+					class="block size-4 animate-pulse rounded-sm bg-accent-hover/50"
+					title="Fetching metadata…"
+				></span>
+			{:else if bookmark.favicon}
+				<img
+					src={bookmark.favicon}
+					alt=""
+					class="size-4 rounded-sm"
+					onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
+				/>
+			{:else}
+				<span class="block size-4 rounded-sm bg-muted-surface"></span>
+			{/if}
+		</span>
+
+		<!-- `focus-visible` keeps it reachable by keyboard even while invisible. -->
+		<input
+			type="checkbox"
+			checked={selected}
+			onchange={() => ontoggleSelect(bookmark.url)}
+			class="absolute inset-0 size-4 cursor-pointer rounded border-line text-accent transition-opacity focus:ring-focus
+				{pinned ? '' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}"
+			aria-label="Select {bookmark.title}"
 		/>
-	{:else}
-		<span class="size-4 shrink-0 rounded-sm bg-muted-surface"></span>
-	{/if}
+	</div>
 
 	<div class="min-w-0 flex-1">
 		<!--

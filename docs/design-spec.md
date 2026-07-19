@@ -329,8 +329,14 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
 
 ### 8d. Multi-select and bulk actions — DECIDED
 
-A checkbox on each row, and one in the list header for select-all. When anything is
-selected, a toolbar appears above the list.
+A checkbox on each row, and one in the list header for select-all.
+
+- **The row checkbox shares the favicon's slot**, appearing on hover rather than
+  occupying a column of its own. Rows are read far more often than they are selected,
+  so a permanent checkbox on every row is clutter most of the time — and the column it
+  needed came out of the title's width. It stays one movement away, is reachable by
+  keyboard while invisible (`focus-visible`), and once anything is selected every row
+  shows its checkbox so the rest can be ticked without hunting.
 
 - **Only operations that make sense on many bookmarks** appear: delete, and re-fetch
   metadata. Editing a title, URL or note is inherently singular, so there is no bulk
