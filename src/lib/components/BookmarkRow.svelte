@@ -46,20 +46,28 @@
 	{/if}
 
 	<div class="min-w-0 flex-1">
-		<a
-			href={bookmark.url}
-			target="_blank"
-			rel="noreferrer"
-			class="truncate font-medium text-content hover:text-accent-content"
-			title={bookmark.description || bookmark.url}>{bookmark.title}</a
-		>
-		<span class="ml-2 text-xs text-faint">{hostname(bookmark.url)}</span>
-		{#if bookmark.collection}
-			<span class="ml-2 text-xs text-faint">/ {bookmark.collection}</span>
-		{/if}
-		{#if pending}
-			<span class="ml-2 animate-pulse text-xs text-accent-content">fetching…</span>
-		{/if}
+		<!--
+			A flex row rather than inline text: `truncate` needs a sized box, and an
+			inline <a> is not one. Without this a bookmark whose title is a long URL —
+			which is every bookmark whose page could not be read — widens the row and
+			scrolls the whole page sideways.
+		-->
+		<div class="flex min-w-0 items-baseline gap-2">
+			<a
+				href={bookmark.url}
+				target="_blank"
+				rel="noreferrer"
+				class="truncate font-medium text-content hover:text-accent-content"
+				title={bookmark.description || bookmark.url}>{bookmark.title}</a
+			>
+			<span class="shrink-0 text-xs text-faint">{hostname(bookmark.url)}</span>
+			{#if bookmark.collection}
+				<span class="hidden shrink-0 text-xs text-faint sm:inline">/ {bookmark.collection}</span>
+			{/if}
+			{#if pending}
+				<span class="shrink-0 animate-pulse text-xs text-accent-content">fetching…</span>
+			{/if}
+		</div>
 		{#if bookmark.notes}
 			<p class="truncate text-xs text-faint">{bookmark.notes}</p>
 		{:else if bookmark.description}

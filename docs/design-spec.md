@@ -186,6 +186,14 @@ applied at import time, it would generally open to an empty list.
   guess at a safe batch size; asking twice for a URL already outstanding is a no-op.
 - Failures are non-fatal: the bookmark is kept with whatever data exists; a fetch error
   is surfaced softly (e.g. a small "couldn't fetch" indicator), never blocks saving.
+- **When the page cannot be read, the site's icon is still offered.** A private
+  document answering 401, or a PDF, yields no title or description — but favicons are
+  almost never behind authentication, so the conventional `/favicon.ico` is used. A
+  request that never got a response yields nothing: with no evidence the host exists,
+  guessing at an icon for it is pointless.
+- **Titles and descriptions behind a login cannot be fetched at all.** The server has
+  no access to the browser's session, so an authenticated page returns 401 to it. That
+  would need metadata captured from the logged-in tab; see §12.
 
 **Tradeoff noted:** most TOML serializers do not preserve comments/formatting on
 rewrite. v1 accepts that app-driven writes **normalize** the file (consistent field

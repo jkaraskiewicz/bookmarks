@@ -48,6 +48,18 @@ function iconScore(rel: string): number {
 }
 
 /**
+ * The icon every site is assumed to serve unless it says otherwise. Not verified —
+ * a broken one is hidden by the UI, and checking would cost a request per bookmark.
+ */
+export function conventionalFavicon(url: string): string | undefined {
+	try {
+		return new URL('/favicon.ico', url).href;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
  * Choose the best favicon from a page's <head>, preferring standard rels.
  * An empty placeholder (href="data:,") means the site opts out of a favicon.
  * Falls back to the conventional /favicon.ico when nothing is declared.
@@ -65,16 +77,27 @@ function pickFavicon(head: string, baseUrl: string): string | undefined {
 		}
 	}
 
+	if (bestScore === 0) return conventionalFavicon(baseUrl);
+	if (!bestHref || /^data:,?$/.test(bestHref)) return undefined;
+
 	try {
-		if (bestScore === 0) return new URL('/favicon.ico', baseUrl).href;
-		if (!bestHref || /^data:,?$/.test(bestHref)) return undefined;
 		return new URL(bestHref, baseUrl).href;
 	} catch {
 		return undefined;
 	}
 }
 
-/** Fetch a URL and extract page metadata. Never throws — returns {} on failure. */
+/**
+ * Fetch a URL and extract page metadata. Never throws — returns {} on failure.
+ *
+ * When the page itself cannot be read — a private document answering 401, a PDF, a
+ * page behind a login — the site's icon is usually still public, so the conventional
+ * `/favicon.ico` is offered rather than giving up entirely. That is the difference
+ * between a bookmark showing its site's icon and showing a grey square.
+ *
+ * A request that never got a response (bad host, timeout) yields nothing: with no
+ * evidence the host exists, guessing at an icon URL for it is not worth it.
+ */
 export async function fetchMetadata(url: string): Promise<PageMetadata> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -84,9 +107,14 @@ export async function fetchMetadata(url: string): Promise<PageMetadata> {
 			redirect: 'follow',
 			headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml' }
 		});
-		if (!response.ok) return {};
+
+		// Whatever the status, the host answered — so its icon is worth a guess.
+		const iconOnly: PageMetadata = { favicon: conventionalFavicon(response.url || url) };
+
+		if (!response.ok) return iconOnly;
 		const contentType = response.headers.get('content-type') ?? '';
-		if (!contentType.includes('html')) return {};
+		if (!contentType.includes('html')) return iconOnly;
+
 		const html = await response.text();
 		return extractMetadata(html, response.url || url);
 	} catch {
