@@ -4,7 +4,7 @@
 	import ImportOptionFields from '$lib/components/ImportOptionFields.svelte';
 	import ImportCard from '$lib/components/ImportCard.svelte';
 	import ImportSummary from '$lib/components/ImportSummary.svelte';
-	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
+	import ThemePicker from '$lib/theme/ThemePicker.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -23,7 +23,7 @@
 			<h1 class="text-lg font-semibold tracking-tight">🔖 Import bookmarks</h1>
 			<div class="flex-1"></div>
 			<a href="/" class="text-sm text-muted hover:text-content">← Back to list</a>
-			<ThemeToggle />
+			<ThemePicker />
 		</div>
 	</header>
 

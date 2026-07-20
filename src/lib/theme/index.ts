@@ -17,7 +17,8 @@
 export const THEMES = [
 	{ id: 'dark', label: 'Dark', icon: '🌙', base: 'dark' },
 	{ id: 'light', label: 'Light', icon: '☀️', base: 'light' },
-	{ id: 'darcula', label: 'Darcula', icon: '🧛', base: 'dark' }
+	{ id: 'darcula', label: 'Darcula', icon: '🧛', base: 'dark' },
+	{ id: 'melange', label: 'Melange', icon: '🍂', base: 'dark' }
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]['id'];
@@ -64,19 +65,14 @@ export function resolveTheme(preference: ThemePreference, prefersLight = false):
 }
 
 /**
- * The order the toggle cycles through: every theme, then `system`. Derived from the
- * registry, so a new theme joins the cycle without touching this.
+ * The order the picker lists preferences: `system` first, since it is the default,
+ * then every theme. Derived from the registry, so a new theme appears in the list
+ * without touching this.
  */
 export const PREFERENCE_ORDER: readonly ThemePreference[] = [
-	...THEMES.map((entry) => entry.id),
-	'system'
+	'system',
+	...THEMES.map((entry) => entry.id)
 ];
-
-/** The next preference when cycling through the toggle. */
-export function nextPreference(current: ThemePreference): ThemePreference {
-	const index = PREFERENCE_ORDER.indexOf(current);
-	return PREFERENCE_ORDER[(index + 1) % PREFERENCE_ORDER.length];
-}
 
 /** How a preference should be described in the UI. */
 export function preferenceLabel(preference: ThemePreference): string {

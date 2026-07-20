@@ -4,7 +4,6 @@ import {
 	PREFERENCE_ORDER,
 	THEMES,
 	isThemeId,
-	nextPreference,
 	preferenceIcon,
 	preferenceLabel,
 	resolveTheme,
@@ -56,28 +55,14 @@ describe('resolveTheme', () => {
 	});
 });
 
-describe('nextPreference', () => {
-	it('offers every theme, then the system option', () => {
-		expect(PREFERENCE_ORDER).toEqual([...THEMES.map((entry) => entry.id), 'system']);
+describe('PREFERENCE_ORDER', () => {
+	it('lists the system option first, then every theme', () => {
+		expect(PREFERENCE_ORDER).toEqual(['system', ...THEMES.map((entry) => entry.id)]);
 	});
 
-	it('visits every option exactly once per lap and returns to the start', () => {
-		const seen = new Set<string>();
-		let preference = DEFAULT_PREFERENCE;
-
-		for (let step = 0; step < PREFERENCE_ORDER.length; step++) {
-			seen.add(preference);
-			preference = nextPreference(preference);
-		}
-
-		expect(seen.size).toBe(PREFERENCE_ORDER.length);
-		expect(preference).toBe(DEFAULT_PREFERENCE);
-	});
-
-	it('advances rather than sticking', () => {
-		for (const preference of PREFERENCE_ORDER) {
-			expect(nextPreference(preference)).not.toBe(preference);
-		}
+	it('offers the default, and offers nothing twice', () => {
+		expect(PREFERENCE_ORDER).toContain(DEFAULT_PREFERENCE);
+		expect(new Set(PREFERENCE_ORDER).size).toBe(PREFERENCE_ORDER.length);
 	});
 });
 
@@ -88,8 +73,10 @@ describe('labels', () => {
 		expect(preferenceLabel('system')).toBe('System');
 	});
 
-	it('gives every option an icon', () => {
-		for (const preference of ['dark', 'light', 'system'] as const) {
+	// Every option is picked from a list, so each needs something to recognise it by.
+	it('gives every option a label and an icon', () => {
+		for (const preference of PREFERENCE_ORDER) {
+			expect(preferenceLabel(preference)).not.toBe('');
 			expect(preferenceIcon(preference)).not.toBe('');
 		}
 	});

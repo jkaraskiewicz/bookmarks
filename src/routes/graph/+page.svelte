@@ -3,7 +3,7 @@
 	import GraphView from '$lib/components/GraphView.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
 	import { inputBase } from '$lib/components/ui';
-	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
+	import ThemePicker from '$lib/theme/ThemePicker.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -24,7 +24,7 @@
 		/>
 		<div class="flex-1"></div>
 		<ViewToggle />
-		<ThemeToggle />
+		<ThemePicker />
 	</header>
 
 	<div class="min-h-0 flex-1">

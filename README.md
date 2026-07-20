@@ -20,16 +20,17 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
 - A map view that arranges bookmarks into clusters based on the tags and collections
   they have in common.
 - Import from Chrome and other browsers, and export back out again.
-- Light and dark themes, following your system by default.
+- Four colour themes, following your system's light/dark setting by default.
 - Plain-text storage that you can also edit by hand.
 
 ## Themes
 
-The button in the top-right corner cycles between **Dark**, **Light**, **Darcula**
-(JetBrains' IDE theme) and **System**.
-System follows your operating system's setting and changes with it; the other two stay
-put. Your choice is remembered in the browser, and applied before the first paint so
-the page never flashes the wrong colours.
+The dropdown in the top-right corner offers **Dark**, **Light**, **Darcula**
+(JetBrains' IDE theme), **Melange** (the warm, low-contrast Neovim scheme) and
+**System**.
+System follows your operating system's setting and changes with it; the rest stay put.
+Your choice is remembered in the browser, and applied before the first paint so the
+page never flashes the wrong colours.
 
 ### Adding a theme
 
@@ -40,8 +41,8 @@ such as `bg-surface` or `text-muted` — so a new theme needs no component chang
    change the values. Every variable in the block must be present; a missing one
    silently inherits from the theme above it.
 2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label, an icon
-   and whether it is fundamentally `light` or `dark`. It joins the toggle's cycle
-   automatically.
+   and whether it is fundamentally `light` or `dark`. It appears in the theme
+   dropdown automatically.
 
 `npm test` then checks the new theme automatically: every text-on-background pair must
 meet the WCAG AA contrast minimum, and the theme must declare the same set of variables

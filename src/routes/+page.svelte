@@ -12,7 +12,7 @@
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
 	import { secondaryButton } from '$lib/components/ui';
 	import { hiddenSelectedCount, pruneSelection, toggleAll, toggleOne } from '$lib/selection';
-	import ThemeToggle from '$lib/theme/ThemeToggle.svelte';
+	import ThemePicker from '$lib/theme/ThemePicker.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -85,7 +85,7 @@
 			<a href="/import" class="shrink-0 {secondaryButton}" title="Import & export bookmarks"
 				>Import</a
 			>
-			<ThemeToggle />
+			<ThemePicker />
 		</div>
 		{#if errorMessage}
 			<p class="mx-auto mt-2 max-w-5xl text-sm text-warning">{errorMessage}</p>

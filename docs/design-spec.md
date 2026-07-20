@@ -114,7 +114,7 @@ added = 2026-07-18T10:31:00
 | `favicon`     | string (URL) | no       | **fetched**     | Remote URL; browser loads it (no local caching in v1).             |
 | `added`       | datetime     | auto     | app             | Set on creation; preserved if present.                             |
 
-**Design calls made (say the word to change):**
+**Design calls made (open to revisiting):**
 
 - **Identity = `url`.** No numeric `id` to keep hand-editing clean; the UI references
   a bookmark by its URL. Editing a URL is treated as an update to that entry.
@@ -309,13 +309,16 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
   reference the variable at runtime rather than baking in a literal, which is what
   allows a theme to be swapped without rebuilding the CSS.
 - **A theme is one block** in `theme/palettes.css` keyed by `[data-theme='…']`, plus an
-  entry in the `THEMES` list. Nothing else. Three ship: dark, light and **Darcula**
-  (JetBrains'). Darcula was built as a test of that claim and cost exactly those two
-  files.
+  entry in the `THEMES` list. Nothing else. Four ship: dark, light, **Darcula**
+  (JetBrains') and **Melange** (Neovim's). The latter two were built as tests of that
+  claim and each cost exactly those two files.
+- **The picker is a `<select>`** listing System plus every registered theme, in
+  `PREFERENCE_ORDER`. It replaced a button that cycled: with four themes, cycling made
+  reaching any given one a matter of clicking until it came round.
 - **Each theme declares a `base`** of light or dark. Widgets with their own two-way
   switch — Svelte Flow's canvas, and the `color-scheme` hint browsers use for
   scrollbars — need that answer, and only the theme knows it.
-- **Preference is `dark` | `light` | `system`**, stored in `localStorage`. `system`
+- **Preference is any registered theme id, or `system`**, stored in `localStorage`. `system`
   follows `prefers-color-scheme` live. The resolved theme is written to
   `document.documentElement.dataset.theme`.
 - **No flash of the wrong theme:** a small inline script in `app.html` applies the
