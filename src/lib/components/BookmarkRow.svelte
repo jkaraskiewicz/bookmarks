@@ -31,9 +31,19 @@
 	 * reachable by keyboard.
 	 */
 	const pinned = $derived(selected || selecting);
+
+	/**
+	 * Whether the row has a second line at all. A bookmark with nothing but a title
+	 * would otherwise reserve an empty one and sit against the top of its row; the
+	 * row keeps its height either way (`min-h-15`) and centres what it does have.
+	 */
+	const hasSubtitle = $derived(
+		Boolean(bookmark.collection || bookmark.notes || bookmark.description) ||
+			bookmark.tags.length > 0
+	);
 </script>
 
-<li class="group flex items-center gap-3 py-2 {selected ? 'bg-accent/10' : ''}">
+<li class="group flex min-h-15 items-center gap-3 py-2 {selected ? 'bg-accent/10' : ''}">
 	<div class="relative size-4 shrink-0">
 		<span class="block transition-opacity {pinned ? 'opacity-0' : 'group-hover:opacity-0'}">
 			{#if pending}
@@ -93,23 +103,25 @@
 			Within this line the order of sacrifice is description, then collection,
 			then tags: the description is the first thing you can do without.
 		-->
-		<!-- `min-h-5` is the height of a tag chip, so tagged and untagged rows match. -->
-		<div class="flex min-h-5 min-w-0 items-baseline gap-3">
-			<p class="flex min-w-0 flex-1 items-baseline gap-1.5 text-xs text-faint">
-				{#if bookmark.collection}
-					<span class="max-w-1/2 shrink-0 truncate" title={bookmark.collection}
-						>{bookmark.collection}</span
-					>
-				{/if}
-				{#if bookmark.notes}
-					<span class="truncate">{bookmark.notes}</span>
-				{:else if bookmark.description}
-					<span class="truncate italic">{bookmark.description}</span>
-				{/if}
-			</p>
+		{#if hasSubtitle}
+			<!-- `min-h-5` is the height of a tag chip, so tagged and untagged rows match. -->
+			<div class="flex min-h-5 min-w-0 items-baseline gap-3">
+				<p class="flex min-w-0 flex-1 items-baseline gap-1.5 text-xs text-faint">
+					{#if bookmark.collection}
+						<span class="max-w-1/2 shrink-0 truncate" title={bookmark.collection}
+							>{bookmark.collection}</span
+						>
+					{/if}
+					{#if bookmark.notes}
+						<span class="truncate">{bookmark.notes}</span>
+					{:else if bookmark.description}
+						<span class="truncate italic">{bookmark.description}</span>
+					{/if}
+				</p>
 
-			<BookmarkTags tags={bookmark.tags} ontoggle={ontoggleTag} />
-		</div>
+				<BookmarkTags tags={bookmark.tags} ontoggle={ontoggleTag} />
+			</div>
+		{/if}
 	</div>
 
 	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
