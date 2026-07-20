@@ -3,6 +3,7 @@
 	import type { Bookmark } from '$lib/types';
 	import { hostname } from '$lib/url';
 	import { iconButton } from './ui';
+	import BookmarkTags from './BookmarkTags.svelte';
 
 	let {
 		bookmark,
@@ -103,15 +104,7 @@
 		</p>
 	</div>
 
-	<div class="flex max-w-1/3 shrink flex-wrap justify-end gap-1">
-		{#each bookmark.tags as tag (tag)}
-			<button
-				onclick={() => ontoggleTag(tag)}
-				class="rounded-full bg-elevated px-1.5 py-0.5 text-xs text-muted hover:bg-muted-surface"
-				>#{tag}</button
-			>
-		{/each}
-	</div>
+	<BookmarkTags tags={bookmark.tags} ontoggle={ontoggleTag} />
 
 	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
 		<button
