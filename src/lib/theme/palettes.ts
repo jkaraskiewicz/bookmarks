@@ -3,11 +3,11 @@ import { fileURLToPath } from 'node:url';
 import { composite, parseColor, type Rgb } from './contrast';
 
 /**
- * Reads `palettes.css` so tests can check the themes it declares.
+ * Reads the theme stylesheets so tests can check the themes they declare.
  *
- * The stylesheet is the source of truth for what a theme looks like, so the checks
- * read it rather than a copy — a theme added later is covered without anyone
- * remembering to register it here.
+ * They are the source of truth for what a theme looks like, so the checks read them
+ * rather than a copy — a theme added later is covered without anyone remembering to
+ * register it here.
  *
  * Node-only: used by tests, not shipped to the browser.
  */
@@ -55,9 +55,24 @@ const TAILWIND: Record<string, string> = {
 	'sky-700': 'oklch(0.5 0.134 242.749)'
 };
 
-/** Every `[data-theme='…']` block in the stylesheet, keyed by theme name. */
+/**
+ * The theme stylesheets, in the order `palettes.css` imports them.
+ *
+ * Following the imports rather than listing the directory is deliberate: a file that
+ * exists but is never imported is dead, and should not be reported as a theme.
+ */
+function themeStylesheets(): string {
+	const index = new URL('./palettes.css', import.meta.url);
+	const css = readFileSync(fileURLToPath(index), 'utf-8');
+	const imports = [...css.matchAll(/@import\s+'([^']+)'/g)].map((match) => match[1]);
+	return imports
+		.map((path) => readFileSync(fileURLToPath(new URL(path, index)), 'utf-8'))
+		.join('\n');
+}
+
+/** Every `[data-theme='…']` block across the theme files, keyed by theme name. */
 export function readPalettes(): Map<string, Palette> {
-	const css = readFileSync(fileURLToPath(new URL('./palettes.css', import.meta.url)), 'utf-8');
+	const css = themeStylesheets();
 	const palettes = new Map<string, Palette>();
 
 	for (const block of css.split('}')) {

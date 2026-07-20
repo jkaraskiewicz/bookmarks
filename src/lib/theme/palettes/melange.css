@@ -1,0 +1,54 @@
+/*
+ * Melange (dark) — savq's Neovim colourscheme: warm, low-saturation, easy on the
+ * eyes. Values come from its published palette, quoted here with the names it uses.
+ *
+ * The one structural difference from the other dark themes: `--on-accent` is the
+ * background colour, not white. Melange's accents are soft pastels, and white on a
+ * pastel is barely legible — dark text on them is both readable and truer to how the
+ * scheme looks in an editor.
+ *
+ * Two values are interpolated rather than quoted: the palette's `ui` (#867462) is
+ * meant for borders, and using it for text misses AA badly (3.4:1 on the canvas,
+ * 2.5:1 on inputs). The text ramp therefore runs from `fg` down to `com`, which
+ * lands the faintest text at 4.9:1 on an input.
+ */
+[data-theme='melange'] {
+	color-scheme: dark;
+
+	--canvas: #292522; /* a.bg */
+	--surface: #34302c; /* a.float */
+	--elevated: #3b3531;
+	--muted-surface: #453e39;
+	--overlay: color-mix(in oklab, #1b1917 70%, transparent);
+
+	--content: #ece1d7; /* a.fg, 11.8:1 on canvas */
+	--secondary: #dacbba; /*  9.6:1 */
+	--muted: #cdb9a4; /*  8.0:1 */
+	--faint: #c1a78e; /* a.com, 6.7:1 on canvas and 4.9:1 on inputs */
+
+	--subtle: #34302c;
+	--line: #554b43;
+	--focus: #a3a9ce;
+
+	--accent: #a3a9ce; /* b.blue */
+	--accent-hover: #b7bcdc;
+	--accent-content: #a3a9ce;
+	--on-accent: #292522;
+
+	--danger: #d47766; /* b.red */
+	--on-danger: #292522; /* 4.8:1 */
+	--warning: #ebc06d; /* b.yellow */
+	--warning-surface: #3a3128;
+	--warning-line: #8b7449; /* d.yellow */
+	--success: #85b695; /* b.green */
+	--success-surface: #233524; /* d.green */
+	--success-line: #3f5a42;
+
+	--collection: #85b695; /* b.green */
+	--collection-hover: #9ac7a8;
+	--collection-edge: color-mix(in oklab, #85b695 40%, transparent);
+	--tag: #89b3b6; /* b.cyan */
+	--tag-hover: #9dc6c9;
+	--tag-edge: color-mix(in oklab, #89b3b6 40%, transparent);
+	--badge: color-mix(in oklab, black 25%, transparent);
+}

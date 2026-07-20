@@ -36,6 +36,9 @@
 
 	/* Outcomes. */
 	--color-danger: var(--danger);
+	/* Text on a `--danger` fill. It is not `--on-accent`: in a dark theme the danger
+	   colour is a *light* red, so white on it is unreadable. */
+	--color-on-danger: var(--on-danger);
 	--color-warning: var(--warning);
 	--color-warning-surface: var(--warning-surface);
 	--color-warning-line: var(--warning-line);

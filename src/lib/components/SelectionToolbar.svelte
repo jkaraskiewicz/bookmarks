@@ -67,7 +67,7 @@
 {#if confirmingDelete}
 	<form method="POST" action="?/deleteSelected" use:enhance={afterAction} class="contents">
 		{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
-		<button type="submit" class="rounded-md bg-danger px-2 py-1 text-xs font-medium text-on-accent"
+		<button type="submit" class="rounded-md bg-danger px-2 py-1 text-xs font-medium text-on-danger"
 			>Delete {count} {noun}</button
 		>
 	</form>

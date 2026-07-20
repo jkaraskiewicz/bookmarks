@@ -30,6 +30,9 @@ const REQUIRED: { text: string; on: string; min: number }[] = [
 	{ text: 'warning', on: 'warning-surface', min: AA_TEXT },
 	{ text: 'success', on: 'success-surface', min: AA_TEXT },
 	{ text: 'danger', on: 'canvas', min: AA_LARGE },
+	// The bulk-delete button fills with `danger`. Missing from this list, it shipped
+	// at 2.9:1 in dark and 2.8:1 in Darcula — white on a light red.
+	{ text: 'on-danger', on: 'danger', min: AA_TEXT },
 	// Hub pills carry white text on a saturated fill.
 	{ text: 'on-accent', on: 'collection', min: AA_LARGE },
 	{ text: 'on-accent', on: 'tag', min: AA_LARGE }

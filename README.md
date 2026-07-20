@@ -37,9 +37,10 @@ page never flashes the wrong colours.
 Themes are defined entirely in CSS. Components never name a colour — they name a role
 such as `bg-surface` or `text-muted` — so a new theme needs no component changes.
 
-1. Copy a block in `src/lib/theme/palettes.css`, give it a new `data-theme` name and
-   change the values. Every variable in the block must be present; a missing one
-   silently inherits from the theme above it.
+1. Copy a file in `src/lib/theme/palettes/`, give it a new `data-theme` name and
+   change the values, then add an `@import` for it to `src/lib/theme/palettes.css`.
+   Every variable in the file must be present; a missing one silently inherits from
+   the theme imported before it.
 2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label, an icon
    and whether it is fundamentally `light` or `dark`. It appears in the theme
    dropdown automatically.

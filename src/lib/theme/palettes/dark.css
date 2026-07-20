@@ -1,0 +1,43 @@
+/* Dark — the default, and what applies before the theme script runs. */
+:root,
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	--canvas: var(--color-neutral-900);
+	--surface: color-mix(in oklab, var(--color-neutral-950) 60%, transparent);
+	--elevated: var(--color-neutral-800);
+	--muted-surface: var(--color-neutral-700);
+	--overlay: color-mix(in oklab, black 60%, transparent);
+
+	/* Every step clears WCAG AA (4.5:1) on the canvas; see theme/contrast.spec.ts. */
+	--content: var(--color-neutral-100); /* 16.4:1 */
+	--secondary: var(--color-neutral-200); /* 14.2:1 */
+	--muted: var(--color-neutral-300); /* 12.1:1 */
+	--faint: var(--color-neutral-400); /*  6.9:1 */
+
+	--subtle: var(--color-neutral-800);
+	--line: var(--color-neutral-700);
+	--focus: var(--color-blue-500);
+
+	--accent: var(--color-blue-600);
+	--accent-hover: var(--color-blue-500);
+	--accent-content: var(--color-blue-400);
+	--on-accent: white;
+
+	--danger: var(--color-red-400);
+	--on-danger: var(--color-neutral-950); /* 6.8:1 on the danger fill */
+	--warning: var(--color-amber-300);
+	--warning-surface: color-mix(in oklab, var(--color-amber-950) 40%, transparent);
+	--warning-line: var(--color-amber-800);
+	--success: var(--color-green-300);
+	--success-surface: color-mix(in oklab, var(--color-green-950) 40%, transparent);
+	--success-line: var(--color-green-800);
+
+	--collection: color-mix(in oklab, var(--color-emerald-700) 85%, transparent);
+	--collection-hover: var(--color-emerald-600);
+	--collection-edge: color-mix(in oklab, var(--color-emerald-400) 40%, transparent);
+	--tag: color-mix(in oklab, var(--color-sky-600) 85%, transparent);
+	--tag-hover: var(--color-sky-500);
+	--tag-edge: color-mix(in oklab, var(--color-sky-400) 40%, transparent);
+	--badge: color-mix(in oklab, black 25%, transparent);
+}

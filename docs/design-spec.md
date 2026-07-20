@@ -308,8 +308,8 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
   `@theme inline` (`theme/tokens.css`). `inline` matters — it makes the utility
   reference the variable at runtime rather than baking in a literal, which is what
   allows a theme to be swapped without rebuilding the CSS.
-- **A theme is one block** in `theme/palettes.css` keyed by `[data-theme='…']`, plus an
-  entry in the `THEMES` list. Nothing else. Four ship: dark, light, **Darcula**
+- **A theme is one file** in `theme/palettes/`, keyed by `[data-theme='…']` and
+  imported from `theme/palettes.css`, plus an entry in the `THEMES` list. Nothing else. Four ship: dark, light, **Darcula**
   (JetBrains') and **Melange** (Neovim's). The latter two were built as tests of that
   claim and each cost exactly those two files.
 - **The picker is a `<select>`** listing System plus every registered theme, in
