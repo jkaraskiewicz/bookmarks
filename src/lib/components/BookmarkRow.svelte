@@ -86,25 +86,31 @@
 		</div>
 
 		<!--
-			Collection lives on the secondary line with the notes, not beside the title.
-			A nested path like `foo/bar/baz` is long, and it was squeezing the title
-			down to a few characters — the one field that must stay readable.
-		-->
-		<p class="flex min-w-0 items-baseline gap-1.5 text-xs text-faint">
-			{#if bookmark.collection}
-				<span class="max-w-1/2 shrink-0 truncate" title={bookmark.collection}
-					>{bookmark.collection}</span
-				>
-			{/if}
-			{#if bookmark.notes}
-				<span class="truncate">{bookmark.notes}</span>
-			{:else if bookmark.description}
-				<span class="truncate italic">{bookmark.description}</span>
-			{/if}
-		</p>
-	</div>
+			Everything else lives on the secondary line, so the title has the first one
+			to itself. Collection, notes and tags each cost the title characters when
+			they sit beside it — with six tags it was down to 37 of 84.
 
-	<BookmarkTags tags={bookmark.tags} ontoggle={ontoggleTag} />
+			Within this line the order of sacrifice is description, then collection,
+			then tags: the description is the first thing you can do without.
+		-->
+		<!-- `min-h-5` is the height of a tag chip, so tagged and untagged rows match. -->
+		<div class="flex min-h-5 min-w-0 items-baseline gap-3">
+			<p class="flex min-w-0 flex-1 items-baseline gap-1.5 text-xs text-faint">
+				{#if bookmark.collection}
+					<span class="max-w-1/2 shrink-0 truncate" title={bookmark.collection}
+						>{bookmark.collection}</span
+					>
+				{/if}
+				{#if bookmark.notes}
+					<span class="truncate">{bookmark.notes}</span>
+				{:else if bookmark.description}
+					<span class="truncate italic">{bookmark.description}</span>
+				{/if}
+			</p>
+
+			<BookmarkTags tags={bookmark.tags} ontoggle={ontoggleTag} />
+		</div>
+	</div>
 
 	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
 		<button

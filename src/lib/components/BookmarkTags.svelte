@@ -29,7 +29,7 @@
 
 {#if tags.length > 0}
 	<div
-		class="flex max-w-1/3 shrink items-center justify-end gap-1 {expanded
+		class="flex max-w-1/2 shrink items-center justify-end gap-1 {expanded
 			? 'flex-wrap'
 			: 'flex-nowrap'}"
 	>

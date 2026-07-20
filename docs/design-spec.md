@@ -381,23 +381,28 @@ A checkbox on each row, and one in the list header for select-all.
 ## 10. UI Design — DECIDED
 
 - **Styling:** Tailwind CSS, dark-friendly, no component library.
-- **Default view: compact list** — one row per bookmark (favicon · title link · url ·
-  collection · tags), dense and fast to scan. A card/grid view can be added later.
+- **Default view: compact list** — two lines per bookmark (favicon · title · host,
+  then collection · notes · tags), dense and fast to scan. A card/grid view can be added later.
   Each row shows a muted **subtitle line** carrying the collection, then the user's
   `notes`, falling back to the auto-fetched `description` (rendered italic to signal
   it's machine-generated).
 
-  **The title has priority for width.** The collection sits on the subtitle line rather
-  than beside the title, because a nested path like `foo/bar/baz/etc` is long and was
-  squeezing the title — the field being scanned for — down to a few characters. The
-  host holds its natural width up to a cap and never shrinks below it, since a host
-  cut to `d…` conveys nothing.
+  **The title owns the first line.** Everything except the host — collection, notes,
+  description and tags — sits on the subtitle line, because each of them costs the
+  title characters when placed beside it: six tags cut an 84-character title to 37.
+  With them moved down, the title's width is the same on every row whatever it
+  carries. The host holds its natural width up to a cap and never shrinks below it,
+  since a host cut to `d…` conveys nothing.
+
+  Within the subtitle line the order of sacrifice is description, then collection,
+  then tags. Tags stay on one line: as many as fit a width budget are shown, and the
+  rest collapse into a `+N` chip that expands that row when clicked.
 
   ```
-  [icon] Angular        angular.dev            #frontend #docs
-         Framework reference I use daily.
-  [icon] MDN            developer.mozilla.org  #docs #ref
-         Resources for developers, by developers.   (italic = description fallback)
+  [icon] Angular                                       angular.dev
+         Dev/Frameworks  Framework reference I use daily.  #frontend #docs
+  [icon] MDN                                     developer.mozilla.org
+         Dev  Resources for developers, by developers.     #docs #ref +2
   ```
 
 - **Sidebar:** search box, a **nested collection tree** (indented, with per-node
