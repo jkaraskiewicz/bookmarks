@@ -20,17 +20,31 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
 - A map view that arranges bookmarks into clusters based on the tags and collections
   they have in common.
 - Import from Chrome and other browsers, and export back out again.
-- Four colour themes, following your system's light/dark setting by default.
+- Four colour themes, a choice of fonts and text sizes, following your system's
+  light/dark setting by default.
 - Plain-text storage that you can also edit by hand.
 
-## Themes
+## Appearance
 
-The dropdown in the top-right corner offers **Dark**, **Light**, **Darcula**
-(JetBrains' IDE theme), **Melange** (the warm, low-contrast Neovim scheme) and
-**System**.
-System follows your operating system's setting and changes with it; the rest stay put.
-Your choice is remembered in the browser, and applied before the first paint so the
-page never flashes the wrong colours.
+The **Appearance** button in the top-right corner opens a panel with three settings.
+Each applies as soon as it is picked, so there is nothing to save.
+
+**Theme** — **Dark**, **Light**, **Darcula** (JetBrains' IDE theme), **Melange** (the
+warm, low-contrast Neovim scheme), or **System**. System follows your operating
+system's light/dark setting and changes with it; the rest stay put.
+
+**Font** — System, Helvetica, Verdana, Trebuchet MS, Georgia, Times New Roman or
+Monospace. No fonts are downloaded, so the list is limited to families that ship with
+both Windows and macOS; each falls back to the nearest equivalent on a machine that
+lacks it.
+
+**Text size** — Small, Medium, Large or Extra large. Set as a percentage of your
+browser's own text size rather than a fixed number, so if you have already raised
+that, these scale from it. The whole interface resizes together, not just the body
+text.
+
+All three are remembered in the browser and applied before the first paint, so the
+page never flashes the wrong colours, font or size while loading.
 
 ### Adding a theme
 
@@ -42,8 +56,8 @@ such as `bg-surface` or `text-muted` — so a new theme needs no component chang
    Every variable in the file must be present; a missing one silently inherits from
    the theme imported before it.
 2. Add the theme to the `THEMES` list in `src/lib/theme/index.ts` with a label, an icon
-   and whether it is fundamentally `light` or `dark`. It appears in the theme
-   dropdown automatically.
+   and whether it is fundamentally `light` or `dark`. It appears in the Appearance
+   panel automatically.
 
 `npm test` then checks the new theme automatically: every text-on-background pair must
 meet the WCAG AA contrast minimum, and the theme must declare the same set of variables

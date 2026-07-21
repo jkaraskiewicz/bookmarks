@@ -315,6 +315,17 @@ Two themes ship, light and dark, and adding more is meant to be cheap.
 - **The picker is a `<select>`** listing System plus every registered theme, in
   `PREFERENCE_ORDER`. It replaced a button that cycled: with four themes, cycling made
   reaching any given one a matter of clicking until it came round.
+- **Theme sits alongside font and text size** in one Appearance dialog (`appearance/`).
+  All three are the same shape — pick one of a fixed list, remember it, apply it to the
+  root element — so they share `storedChoice()` for validating what was stored and one
+  `ChoicePicker` control. Typography is applied as `--app-font` and `--app-font-size`
+  rather than a class, because a font stack is an open-ended value.
+- **Fonts are system fonts only.** Nothing is downloaded, so the list is limited to
+  families present on both Windows and macOS, each written as a stack ending in a
+  generic. A font the machine lacks would otherwise fall through silently and the
+  picker would be lying; a test asserts every stack ends in a generic family.
+- **Text size scales the root**, in percent of the browser's own base size, so every
+  `rem` in the interface moves together and a raised browser default is respected.
 - **Each theme declares a `base`** of light or dark. Widgets with their own two-way
   switch — Svelte Flow's canvas, and the `color-scheme` hint browsers use for
   scrollbars — need that answer, and only the theme knows it.

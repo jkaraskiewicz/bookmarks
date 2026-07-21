@@ -2,21 +2,16 @@
 	import { enhance } from '$app/forms';
 	import type { Bookmark } from '$lib/types';
 	import { field, ghostButton, primaryButton } from './ui';
+	import Dialog from './Dialog.svelte';
 
 	let { bookmark, onclose }: { bookmark: Bookmark; onclose: () => void } = $props();
 </script>
 
 <!--
-	The backdrop deliberately does not close the dialog. A stray click beside it
-	used to discard whatever had been typed, with no warning and no way back —
-	closing is worth a deliberate press of Cancel.
+	Not dismissable: a stray click beside the form used to discard whatever had been
+	typed, with no warning and no way back. Closing is worth a deliberate Cancel.
 -->
-<div
-	class="fixed inset-0 z-10 flex items-center justify-center bg-overlay p-4"
-	role="dialog"
-	aria-modal="true"
-	aria-labelledby="edit-dialog-title"
->
+<Dialog title="Edit bookmark" {onclose}>
 	<form
 		method="POST"
 		action="?/update"
@@ -25,9 +20,8 @@
 				await update();
 				onclose();
 			}}
-		class="w-full max-w-md space-y-3 rounded-lg border border-line bg-canvas p-5 text-content"
+		class="space-y-3"
 	>
-		<h2 id="edit-dialog-title" class="text-base font-semibold">Edit bookmark</h2>
 		<input type="hidden" name="originalUrl" value={bookmark.url} />
 
 		<label class="block text-sm">
@@ -72,4 +66,4 @@
 			<button class={primaryButton}>Save</button>
 		</div>
 	</form>
-</div>
+</Dialog>

@@ -56,3 +56,21 @@
 	/** Darkening for the count badge that sits on a hub's fill. */
 	--color-badge: var(--badge);
 }
+
+/**
+ * Typography chosen in the appearance dialog. Defaults live here so the page is
+ * styled before any script runs; `appearance.svelte.ts` overrides them on the root
+ * element, and the pre-paint script in `app.html` does it earlier still.
+ *
+ * The size is a percentage of the browser's own base size, applied to the root, so
+ * every `rem` in the interface scales from one value.
+ */
+:root {
+	--app-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--app-font-size: 100%;
+}
+
+html {
+	font-family: var(--app-font);
+	font-size: var(--app-font-size);
+}

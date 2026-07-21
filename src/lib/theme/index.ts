@@ -1,3 +1,5 @@
+import { storedChoice } from '$lib/appearance/choice';
+
 /**
  * Themes.
  *
@@ -50,8 +52,7 @@ export function isThemeId(value: unknown): value is ThemeId {
 
 /** Coerce anything (a stored string, a URL param) into a usable preference. */
 export function toPreference(value: unknown): ThemePreference {
-	if (value === 'system' || isThemeId(value)) return value;
-	return DEFAULT_PREFERENCE;
+	return storedChoice(PREFERENCE_ORDER, value, DEFAULT_PREFERENCE);
 }
 
 /**

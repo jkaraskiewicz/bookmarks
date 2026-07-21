@@ -6,22 +6,39 @@
 		<meta name="text-scale" content="scale" />
 		%sveltekit.head%
 		<script>
-			// Applied before first paint so the page never flashes the wrong theme.
-			// This has to run before any module loads, so it necessarily restates
-			// resolveTheme() and the storage key from src/lib/theme. A test asserts
-			// the list and the key below still match the module.
+			// Applied before first paint so the page never flashes the wrong appearance —
+			// a late font or size change reflows the whole layout, which is worse to
+			// watch than a colour change. This has to run before any module loads, so it
+			// necessarily restates the lists, the storage keys and the resolution rule
+			// from src/lib/theme and src/lib/appearance. A test asserts they still match.
 			(() => {
 				const THEMES = ['dark', 'light', 'darcula', 'melange'];
 				const STORAGE_KEY = 'bookmarks:theme';
 				const FALLBACK = 'dark';
+				const FONTS = {
+					system: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+					helvetica: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+					verdana: 'Verdana, Geneva, sans-serif',
+					trebuchet: '"Trebuchet MS", Tahoma, sans-serif',
+					georgia: 'Georgia, "Times New Roman", Times, serif',
+					times: '"Times New Roman", Times, serif',
+					mono: 'ui-monospace, Menlo, Consolas, "Courier New", monospace'
+				};
+				const FONT_SIZES = { small: '87.5%', medium: '100%', large: '112.5%', huge: '125%' };
+				const root = document.documentElement;
 				try {
 					const stored = localStorage.getItem(STORAGE_KEY);
 					const preference = stored === 'system' || THEMES.includes(stored) ? stored : 'system';
 					const prefersLight = matchMedia('(prefers-color-scheme: light)').matches;
-					document.documentElement.dataset.theme =
+					root.dataset.theme =
 						preference === 'system' ? (prefersLight ? 'light' : FALLBACK) : preference;
+
+					const font = FONTS[localStorage.getItem('bookmarks:font')];
+					if (font) root.style.setProperty('--app-font', font);
+					const size = FONT_SIZES[localStorage.getItem('bookmarks:font-size')];
+					if (size) root.style.setProperty('--app-font-size', size);
 				} catch {
-					document.documentElement.dataset.theme = FALLBACK;
+					root.dataset.theme = FALLBACK;
 				}
 			})();
 		</script>
