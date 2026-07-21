@@ -5,3 +5,25 @@
 /* Theme values first, then the token layer that maps them onto utility names. */
 @import '../lib/theme/palettes.css';
 @import '../lib/theme/tokens.css';
+
+/*
+ * Tailwind v4's Preflight sets `cursor: default` on buttons, so only real links were
+ * showing a pointer and every button in the app looked inert. Restored here rather
+ * than as a `cursor-pointer` class on each one: it is how a control should behave by
+ * default, not a decision worth repeating at every call site.
+ *
+ * Disabled controls are excluded — a pointer on something that will not respond is a
+ * worse lie than no pointer at all.
+ */
+@layer base {
+	button:not(:disabled),
+	summary,
+	select:not(:disabled),
+	[role='button']:not([aria-disabled='true']),
+	label:has(> input[type='checkbox']:not(:disabled)),
+	input[type='checkbox']:not(:disabled),
+	input[type='radio']:not(:disabled),
+	input[type='file']:not(:disabled)::file-selector-button {
+		cursor: pointer;
+	}
+}

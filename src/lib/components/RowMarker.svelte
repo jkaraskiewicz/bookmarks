@@ -53,7 +53,7 @@
 		type="checkbox"
 		checked={selected}
 		onchange={ontoggle}
-		class="absolute inset-0 size-4 cursor-pointer rounded border-line text-accent transition-opacity focus:ring-focus
+		class="absolute inset-0 size-4 rounded border-line text-accent transition-opacity focus:ring-focus
 			{pinned ? '' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}"
 		aria-label="Select {label}"
 	/>

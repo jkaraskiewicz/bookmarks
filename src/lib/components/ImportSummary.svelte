@@ -18,7 +18,7 @@
 
 {#if summary.possibleDuplicates.length}
 	<details class="rounded-md border border-subtle bg-surface px-4 py-3 text-sm text-secondary">
-		<summary class="cursor-pointer">
+		<summary>
 			{plural(summary.possibleDuplicates.length, 'imported bookmark')} may duplicate something you already
 			had
 		</summary>
