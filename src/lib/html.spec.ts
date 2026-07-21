@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decodeEntities, escapeHtml } from './html';
+import { attributeValue, decodeEntities, escapeHtml } from './html';
 
 describe('decodeEntities', () => {
 	it('decodes the common named entities', () => {
@@ -38,5 +38,37 @@ describe('escapeHtml', () => {
 	it('round-trips through decodeEntities', () => {
 		const raw = 'Tom & "Jerry" <cartoon>';
 		expect(decodeEntities(escapeHtml(raw))).toBe(raw);
+	});
+});
+
+describe('attributeValue', () => {
+	it('reads double- and single-quoted values alike', () => {
+		expect(attributeValue('<link rel="icon" href="/a.png">', 'href')).toBe('/a.png');
+		expect(attributeValue("<link rel='icon' href='/a.png'>", 'href')).toBe('/a.png');
+	});
+
+	it('tolerates spaces around the equals sign', () => {
+		expect(attributeValue('<meta content = "hi">', 'content')).toBe('hi');
+	});
+
+	it('matches the attribute name case-insensitively', () => {
+		expect(attributeValue('<a HREF="/x">', 'href')).toBe('/x');
+	});
+
+	it('gives undefined when the attribute is absent', () => {
+		expect(attributeValue('<link rel="icon">', 'href')).toBeUndefined();
+	});
+
+	it('gives an empty string for an empty value, distinguishing it from absent', () => {
+		expect(attributeValue('<link href="">', 'href')).toBe('');
+	});
+
+	it('does not match an attribute whose name merely ends with the one asked for', () => {
+		// `data-href` must not answer a request for `href`.
+		expect(attributeValue('<a data-href="/wrong">', 'href')).toBeUndefined();
+	});
+
+	it('leaves entities encoded for the caller to decode', () => {
+		expect(attributeValue('<a href="/a?x=1&amp;y=2">', 'href')).toBe('/a?x=1&amp;y=2');
 	});
 });

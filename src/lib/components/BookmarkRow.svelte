@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import type { Bookmark } from '$lib/types';
 	import { hostname } from '$lib/url';
-	import { iconButton } from './ui';
 	import BookmarkTags from './BookmarkTags.svelte';
+	import RowActions from './RowActions.svelte';
+	import RowMarker from './RowMarker.svelte';
 
 	let {
 		bookmark,
@@ -25,14 +25,6 @@
 	} = $props();
 
 	/**
-	 * The checkbox shares the icon's slot instead of taking a column of its own.
-	 * Rows are read far more often than they are selected, so a checkbox on every
-	 * row is clutter most of the time — but it has to stay one movement away, and
-	 * reachable by keyboard.
-	 */
-	const pinned = $derived(selected || selecting);
-
-	/**
 	 * Whether the row has a second line at all. A bookmark with nothing but a title
 	 * would otherwise reserve an empty one and sit against the top of its row; the
 	 * row keeps its height either way (`min-h-15`) and centres what it does have.
@@ -44,35 +36,14 @@
 </script>
 
 <li class="group flex min-h-15 items-center gap-3 py-2 {selected ? 'bg-accent/10' : ''}">
-	<div class="relative size-4 shrink-0">
-		<span class="block transition-opacity {pinned ? 'opacity-0' : 'group-hover:opacity-0'}">
-			{#if pending}
-				<span
-					class="block size-4 animate-pulse rounded-sm bg-accent-hover/50"
-					title="Fetching metadata…"
-				></span>
-			{:else if bookmark.favicon}
-				<img
-					src={bookmark.favicon}
-					alt=""
-					class="size-4 rounded-sm"
-					onerror={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = 'hidden')}
-				/>
-			{:else}
-				<span class="block size-4 rounded-sm bg-muted-surface"></span>
-			{/if}
-		</span>
-
-		<!-- `focus-visible` keeps it reachable by keyboard even while invisible. -->
-		<input
-			type="checkbox"
-			checked={selected}
-			onchange={() => ontoggleSelect(bookmark.url)}
-			class="absolute inset-0 size-4 cursor-pointer rounded border-line text-accent transition-opacity focus:ring-focus
-				{pinned ? '' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}"
-			aria-label="Select {bookmark.title}"
-		/>
-	</div>
+	<RowMarker
+		favicon={bookmark.favicon}
+		{pending}
+		{selected}
+		{selecting}
+		label={bookmark.title}
+		ontoggle={() => ontoggleSelect(bookmark.url)}
+	/>
 
 	<div class="min-w-0 flex-1">
 		<!--
@@ -124,19 +95,5 @@
 		{/if}
 	</div>
 
-	<div class="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
-		<button
-			onclick={() => onedit(bookmark)}
-			class="{iconButton} w-auto px-1.5 hover:text-content"
-			title="Edit">Edit</button
-		>
-		<form method="POST" action="?/refresh" use:enhance class="contents">
-			<input type="hidden" name="url" value={bookmark.url} />
-			<button class="{iconButton} hover:text-content" title="Re-fetch metadata">↻</button>
-		</form>
-		<form method="POST" action="?/delete" use:enhance class="contents">
-			<input type="hidden" name="url" value={bookmark.url} />
-			<button class="{iconButton} hover:text-danger" title="Delete">✕</button>
-		</form>
-	</div>
+	<RowActions url={bookmark.url} onedit={() => onedit(bookmark)} />
 </li>

@@ -1,4 +1,3 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { parseNetscape } from '$lib/import/netscape';
@@ -9,21 +8,23 @@ import { splitList } from '$lib/tags';
 import { addBookmarks } from '$lib/server/repository';
 import { listChromeProfiles, readChromeBookmarksJson } from '$lib/server/chromeProfile';
 import { refreshMetadataInBackground } from '$lib/server/enrichment';
+import { guard } from '$lib/server/action';
+import { invalid } from '$lib/server/errors';
+import { optionalField, requiredField, requiredUpload, textField } from '$lib/server/form';
 
+/** The options every import form carries: where to file the results, and how to tag them. */
 function readOptions(form: FormData): ImportOptions {
 	return {
-		collectionPrefix: String(form.get('collectionPrefix') ?? '').trim() || undefined,
-		extraTags: splitList(form.get('extraTags') as string | null),
-		onlyCollection: String(form.get('onlyCollection') ?? '').trim() || undefined
+		collectionPrefix: optionalField(form, 'collectionPrefix'),
+		extraTags: splitList(textField(form, 'extraTags')),
+		onlyCollection: optionalField(form, 'onlyCollection')
 	};
 }
 
 /** Shared tail of every import action: prepare, persist, kick off enrichment. */
 async function runImport(items: ImportItem[], options: ImportOptions) {
 	const prepared = applyImportOptions(items, options);
-	if (prepared.length === 0) {
-		return fail(400, { message: 'Nothing to import — no usable bookmarks found.' });
-	}
+	if (prepared.length === 0) throw invalid('Nothing to import — no usable bookmarks found.');
 
 	const summary: ImportSummary = await addBookmarks(prepared);
 
@@ -55,34 +56,30 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	/** Import from an exported bookmarks HTML file (Chrome, Firefox, Safari, Edge). */
-	file: async ({ request }) => {
-		const form = await request.formData();
-		const upload = form.get('file');
-		if (!(upload instanceof File) || upload.size === 0) {
-			return fail(400, { message: 'Choose a bookmarks HTML file to upload.' });
-		}
-		return runImport(parseNetscape(await upload.text()), readOptions(form));
-	},
+	file: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const upload = requiredUpload(form, 'file', 'Choose a bookmarks HTML file to upload.');
+			return runImport(parseNetscape(await upload.text()), readOptions(form));
+		}),
 
 	/** Import straight from a local Chrome profile's live bookmarks. */
-	profile: async ({ request }) => {
-		const form = await request.formData();
-		const profileDir = String(form.get('profile') ?? '');
-		if (!profileDir) return fail(400, { message: 'Choose a Chrome profile.' });
+	profile: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const profileDir = requiredField(form, 'profile', 'Choose a Chrome profile.');
 
-		try {
-			const json = await readChromeBookmarksJson(profileDir);
+			const json = await readChromeBookmarksJson(profileDir).catch(() => {
+				throw invalid(`Could not read bookmarks for profile "${profileDir}".`);
+			});
 			return runImport(parseChromeBookmarks(json), readOptions(form));
-		} catch {
-			return fail(400, { message: `Could not read bookmarks for profile "${profileDir}".` });
-		}
-	},
+		}),
 
 	/** Import a pasted list of URLs (one per line) — the open-tabs path. */
-	paste: async ({ request }) => {
-		const form = await request.formData();
-		const text = String(form.get('urls') ?? '');
-		if (!text.trim()) return fail(400, { message: 'Paste at least one URL.' });
-		return runImport(parseUrlList(text), readOptions(form));
-	}
+	paste: ({ request }) =>
+		guard(async () => {
+			const form = await request.formData();
+			const urls = requiredField(form, 'urls', 'Paste at least one URL.');
+			return runImport(parseUrlList(urls), readOptions(form));
+		})
 };

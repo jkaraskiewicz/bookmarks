@@ -1,4 +1,4 @@
-import { decodeEntities } from '$lib/html';
+import { attributeValue, decodeEntities } from '$lib/html';
 import { splitList } from '$lib/tags';
 import type { ImportItem } from '../types';
 
@@ -6,10 +6,10 @@ import type { ImportItem } from '../types';
 const TOKEN_PATTERN =
 	/<dt>\s*<h3[^>]*>([\s\S]*?)<\/h3>|<dl[^>]*>|<\/dl>|<a\s+([^>]*?)>([\s\S]*?)<\/a>|<dd>([^\n<]*)/gi;
 
-/** Pull a named attribute out of a raw tag-attribute string. */
+/** A tag attribute with its entities decoded — exported bookmarks encode `&` in URLs. */
 function readAttribute(raw: string, name: string): string | undefined {
-	const match = new RegExp(`${name}\\s*=\\s*"([^"]*)"`, 'i').exec(raw);
-	return match ? decodeEntities(match[1]) : undefined;
+	const value = attributeValue(raw, name);
+	return value === undefined ? undefined : decodeEntities(value);
 }
 
 /** Browsers write ADD_DATE as unix seconds. Returns an ISO string, or undefined. */

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { fieldClass, inputBase, primaryButton, secondaryButton } from './ui';
+	import { field, inputBase, primaryButton, secondaryButton } from './ui';
 	import DuplicateNotice from './DuplicateNotice.svelte';
 
 	let addUrl = $state('');
@@ -72,16 +72,15 @@
 
 	{#if showAdvanced}
 		<div class="mt-2 grid grid-cols-2 gap-2">
-			<input name="title" placeholder="Title (optional)" class="col-span-2 {fieldClass}" />
-			<input name="tags" placeholder="Tags (comma separated)" class={fieldClass} />
+			<input name="title" placeholder="Title (optional)" class="col-span-2 {field}" />
+			<input name="tags" placeholder="Tags (comma separated)" class={field} />
 			<input
 				name="collection"
 				placeholder="Collection (e.g. Dev/Frameworks)"
 				list="collection-list"
-				class={fieldClass}
+				class={field}
 			/>
-			<textarea name="notes" rows="2" placeholder="Notes" class="col-span-2 {fieldClass}"
-			></textarea>
+			<textarea name="notes" rows="2" placeholder="Notes" class="col-span-2 {field}"></textarea>
 		</div>
 	{/if}
 

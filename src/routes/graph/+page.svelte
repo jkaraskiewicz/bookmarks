@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import GraphView from '$lib/components/GraphView.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
-	import { inputBase } from '$lib/components/ui';
+	import { inputBase, pageHeader, pageShell } from '$lib/components/ui';
 	import ThemePicker from '$lib/theme/ThemePicker.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -13,8 +13,8 @@
 
 <svelte:head><title>Bookmarks · Graph</title></svelte:head>
 
-<div class="flex h-dvh flex-col bg-canvas text-content">
-	<header class="flex items-center gap-4 border-b border-subtle bg-surface px-6 py-4">
+<div class="flex h-dvh flex-col {pageShell}">
+	<header class="flex items-center gap-4 {pageHeader}">
 		<h1 class="text-lg font-semibold tracking-tight whitespace-nowrap">🔖 Bookmarks</h1>
 		<input
 			bind:value={search}

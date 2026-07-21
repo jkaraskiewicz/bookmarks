@@ -1,45 +1,20 @@
 import type { Bookmark, NewBookmark } from '$lib/types';
-import type { ImportItem, ImportSummary } from '$lib/import/types';
 import { ensureScheme } from '$lib/url';
-import { findDuplicate, exactKey, similarKey } from '$lib/dedupe';
-import { readFromDisk, transact } from './store';
-import { invalid, conflict, notFound } from './errors';
+import { findDuplicate } from '$lib/dedupe';
+import { readFromDisk, transact } from '../store';
+import { invalid, conflict, notFound } from '../errors';
+import { buildBookmark, trimFields } from './fields';
 
 /**
- * Operations on the bookmark library. Persistence lives in `store.ts`; this module
- * is about what those operations mean — identity, duplicates, and field handling.
+ * Operations on one bookmark at a time. Persistence lives in `store.ts` and field
+ * shaping in `fields.ts`; this module is about what the operations mean — identity,
+ * duplicates, and what each one is allowed to overwrite.
  */
 
 /** Read all bookmarks, newest first. Reads fresh from disk every time. */
 export async function readBookmarks(): Promise<Bookmark[]> {
 	const list = await readFromDisk();
 	return list.sort((a, b) => b.added.localeCompare(a.added));
-}
-
-/** Trim user-supplied fields; `undefined` means "not provided" (keep existing on update). */
-function trimFields(input: NewBookmark) {
-	return {
-		title: input.title?.trim() || undefined,
-		tags: input.tags?.map((t) => t.trim()).filter(Boolean),
-		collection: input.collection?.trim() || undefined,
-		notes: input.notes?.trim() || undefined
-	};
-}
-
-/**
- * Build a stored bookmark from user or imported input. `added` lets an import keep
- * the date the bookmark was originally created; otherwise it is created now.
- */
-function buildBookmark(url: string, input: NewBookmark, added?: string): Bookmark {
-	const fields = trimFields(input);
-	return {
-		url,
-		title: fields.title ?? url,
-		tags: fields.tags ?? [],
-		collection: fields.collection,
-		notes: fields.notes,
-		added: added ?? new Date().toISOString()
-	};
 }
 
 export interface AddResult {
@@ -82,45 +57,6 @@ export function mergeIntoBookmark(url: string, input: NewBookmark): Promise<Book
 		tags: [...new Set([...current.tags, ...(fields.tags ?? [])])],
 		notes: [current.notes, fields.notes].filter(Boolean).join('\n') || undefined
 	}));
-}
-
-/**
- * Add many bookmarks in a single read-modify-write. URLs already present (in the
- * file or earlier in the batch) are skipped, never overwritten — an import must
- * not clobber notes or tags you've curated here.
- */
-export function addBookmarks(items: ImportItem[]): Promise<ImportSummary> {
-	return transact((list) => {
-		const byExactKey = new Map(list.map((existing) => [exactKey(existing.url), existing]));
-		const bySimilarKey = new Map(list.map((existing) => [similarKey(existing.url), existing]));
-		const created: Bookmark[] = [];
-		const possibleDuplicates: ImportSummary['possibleDuplicates'] = [];
-
-		for (const item of items) {
-			const url = ensureScheme(item.url);
-			if (!url) continue;
-
-			// Certainly already here: skip quietly.
-			if (byExactKey.has(exactKey(url))) continue;
-
-			// Probably already here: import it anyway, but report it — silently
-			// dropping a bookmark on a guess is worse than keeping a duplicate.
-			const similar = bySimilarKey.get(similarKey(url));
-			if (similar) possibleDuplicates.push({ url, existing: similar.url });
-
-			const bookmark = buildBookmark(url, item, item.added);
-			created.push(bookmark);
-			byExactKey.set(exactKey(url), bookmark);
-			if (!similar) bySimilarKey.set(similarKey(url), bookmark);
-		}
-
-		const summary: ImportSummary = {
-			added: created.length,
-			skipped: items.length - created.length,
-			possibleDuplicates
-		};
-		return { next: created.length ? [...created, ...list] : undefined, result: summary };
-	});
 }
 
 /**

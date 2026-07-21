@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
 	import { ghostButton, secondaryButton } from './ui';
+	import UrlAction from './UrlAction.svelte';
 
 	/**
 	 * Actions for the current selection. Rendered inside the list's header row rather
@@ -33,13 +32,10 @@
 		confirmingDelete = false;
 	});
 
-	const afterAction: SubmitFunction = () => {
-		return async ({ update }) => {
-			await update();
-			confirmingDelete = false;
-			ondone();
-		};
-	};
+	function finish() {
+		confirmingDelete = false;
+		ondone();
+	}
 
 	const count = $derived(selected.length);
 	const noun = $derived(count === 1 ? 'bookmark' : 'bookmarks');
@@ -55,22 +51,20 @@
 
 <div class="flex-1"></div>
 
-<form method="POST" action="?/refreshSelected" use:enhance={afterAction} class="contents">
-	{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
+<UrlAction action="?/refreshSelected" url={selected} onsubmitted={finish}>
 	<button
 		type="submit"
 		class="{secondaryButton} {compactButton}"
 		title="Re-fetch title, description and icon">↻ Refresh</button
 	>
-</form>
+</UrlAction>
 
 {#if confirmingDelete}
-	<form method="POST" action="?/deleteSelected" use:enhance={afterAction} class="contents">
-		{#each selected as url (url)}<input type="hidden" name="url" value={url} />{/each}
+	<UrlAction action="?/deleteSelected" url={selected} onsubmitted={finish}>
 		<button type="submit" class="rounded-md bg-danger px-2 py-1 text-xs font-medium text-on-danger"
 			>Delete {count} {noun}</button
 		>
-	</form>
+	</UrlAction>
 	<button
 		type="button"
 		onclick={() => (confirmingDelete = false)}

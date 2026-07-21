@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { fieldClass, primaryButton, secondaryButton } from '$lib/components/ui';
+	import { field, pageHeader, pageShell, primaryButton, secondaryButton } from '$lib/components/ui';
 	import ImportOptionFields from '$lib/components/ImportOptionFields.svelte';
 	import ImportCard from '$lib/components/ImportCard.svelte';
 	import ImportSummary from '$lib/components/ImportSummary.svelte';
@@ -17,8 +17,8 @@
 
 <svelte:head><title>Bookmarks · Import</title></svelte:head>
 
-<div class="min-h-screen bg-canvas text-content">
-	<header class="border-b border-subtle bg-surface px-6 py-4">
+<div class="min-h-screen {pageShell}">
+	<header class={pageHeader}>
 		<div class="mx-auto flex max-w-3xl items-center gap-4">
 			<h1 class="text-lg font-semibold tracking-tight">🔖 Import bookmarks</h1>
 			<div class="flex-1"></div>
@@ -50,7 +50,7 @@
 				<form method="POST" action="?/profile" class="mt-4 space-y-3">
 					<label class="block text-sm">
 						<span class="text-muted">Profile</span>
-						<select name="profile" class="mt-1 {fieldClass}">
+						<select name="profile" class="mt-1 {field}">
 							{#each data.profiles as profile (profile.dir)}
 								<option value={profile.dir}>{profile.dir} — {profile.count} bookmarks</option>
 							{/each}
@@ -63,7 +63,7 @@
 							name="onlyCollection"
 							list="chrome-folders"
 							placeholder="e.g. Bookmarks bar/Open tabs"
-							class="mt-1 {fieldClass}"
+							class="mt-1 {field}"
 						/>
 					</label>
 					<datalist id="chrome-folders">
@@ -111,7 +111,7 @@
 					name="urls"
 					rows="6"
 					placeholder={'https://svelte.dev  Svelte\nhttps://news.ycombinator.com'}
-					class="{fieldClass} font-mono text-xs"></textarea>
+					class="{field} font-mono text-xs"></textarea>
 				<ImportOptionFields />
 				<button class={primaryButton} type="submit">Import URLs</button>
 			</form>

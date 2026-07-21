@@ -22,4 +22,5 @@ export const library: Bookmark[] = [
 	bookmark('https://f.dev')
 ];
 
-export const ids = (graph: Graph) => graph.nodes.map((node) => node.id);
+/** Every node id in a graph, for asserting on what a build produced. */
+export const nodeIds = (graph: Graph) => graph.nodes.map((node) => node.id);

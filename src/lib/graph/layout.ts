@@ -15,6 +15,14 @@ interface SimNode extends SimulationNodeDatum {
 	isHub: boolean;
 }
 
+/** A graph edge as d3 sees it. `distance`/`pull` are set for affinity edges only. */
+interface SimLink {
+	source: string | SimNode;
+	target: string | SimNode;
+	distance?: number;
+	pull?: number;
+}
+
 export interface Point {
 	x: number;
 	y: number;
@@ -65,15 +73,23 @@ function tickCount(nodeCount: number): number {
  * rearranging it; dragged nodes are fixed and act as anchors for everything else.
  */
 export function layoutGraph(graph: Graph, options: LayoutOptions = {}): Map<string, Point> {
-	const { previous, pinned } = options;
+	const nodes = startingNodes(graph, options);
+	const simulation = buildSimulation(nodes, linksFrom(graph));
 
-	const nodes: SimNode[] = graph.nodes.map((node) => {
-		const isHub = node.kind !== 'bookmark';
+	// Run to a settled state synchronously (no animation frames).
+	simulation.tick(tickCount(nodes.length));
+
+	return positionsOf(nodes);
+}
+
+/** Where each node begins: pinned, where it already was, or beside its neighbour. */
+function startingNodes(graph: Graph, { previous, pinned }: LayoutOptions): SimNode[] {
+	return graph.nodes.map((node) => {
 		const anchor = pinned?.get(node.id);
 		const start = anchor ?? previous?.get(node.id) ?? seedNear(node.id, graph, previous);
 		return {
 			id: node.id,
-			isHub,
+			isHub: node.kind !== 'bookmark',
 			x: start?.x,
 			y: start?.y,
 			// A pinned node is immovable: fx/fy override simulation forces.
@@ -81,46 +97,55 @@ export function layoutGraph(graph: Graph, options: LayoutOptions = {}): Map<stri
 			fy: anchor?.y
 		};
 	});
+}
 
-	// Affinity links are the clustering force: the more two hubs overlap, the closer
-	// they sit, so related tags and collections end up as neighbours.
-	const links = graph.edges.map((edge) => ({
-		source: edge.source,
-		target: edge.target,
-		distance: edge.kind === 'affinity' ? affinityDistance(edge.strength ?? 0) : undefined,
-		pull: edge.kind === 'affinity' ? affinityPull(edge.strength ?? 0) : undefined
-	}));
+/**
+ * Edges as simulation links. Affinity links are the clustering force: the more two
+ * hubs overlap, the closer they sit and the harder they pull, so related tags and
+ * collections end up as neighbours. Other edges take the defaults.
+ */
+function linksFrom(graph: Graph): SimLink[] {
+	return graph.edges.map((edge) => {
+		const affinity = edge.kind === 'affinity' ? (edge.strength ?? 0) : undefined;
+		return {
+			source: edge.source,
+			target: edge.target,
+			distance: affinity === undefined ? undefined : affinityDistance(affinity),
+			pull: affinity === undefined ? undefined : affinityPull(affinity)
+		};
+	});
+}
 
-	const simulation = forceSimulation(nodes)
-		.force(
-			'link',
-			forceLink<SimNode, (typeof links)[number]>(links)
-				.id((node) => node.id)
-				.distance((link) => link.distance ?? (isHubEnd(link.source) ? 160 : 110))
-				.strength((link) => link.pull ?? 0.5)
-		)
-		.force(
-			'charge',
-			forceManyBody<SimNode>().strength((node) => (node.isHub ? HUB_CHARGE : BOOKMARK_CHARGE))
-		)
-		.force('center', forceCenter(0, 0))
-		.force(
-			'collide',
-			forceCollide<SimNode>().radius((node) => (node.isHub ? HUB_RADIUS : BOOKMARK_RADIUS))
-		)
-		// Gently pull disconnected clusters toward the middle for a tighter map.
-		.force('x', forceX(0).strength(0.05))
-		.force('y', forceY(0).strength(0.05))
-		.stop();
+/** The forces that shape the map, assembled but not yet run. */
+function buildSimulation(nodes: SimNode[], links: SimLink[]) {
+	return (
+		forceSimulation(nodes)
+			.force(
+				'link',
+				forceLink<SimNode, SimLink>(links)
+					.id((node) => node.id)
+					.distance((link) => link.distance ?? (isHubEnd(link.source) ? 160 : 110))
+					.strength((link) => link.pull ?? 0.5)
+			)
+			.force(
+				'charge',
+				forceManyBody<SimNode>().strength((node) => (node.isHub ? HUB_CHARGE : BOOKMARK_CHARGE))
+			)
+			.force('center', forceCenter(0, 0))
+			.force(
+				'collide',
+				forceCollide<SimNode>().radius((node) => (node.isHub ? HUB_RADIUS : BOOKMARK_RADIUS))
+			)
+			// Gently pull disconnected clusters toward the middle for a tighter map.
+			.force('x', forceX(0).strength(0.05))
+			.force('y', forceY(0).strength(0.05))
+			.stop()
+	);
+}
 
-	// Run to a settled state synchronously (no animation frames).
-	simulation.tick(tickCount(nodes.length));
-
-	const positions = new Map<string, Point>();
-	for (const node of nodes) {
-		positions.set(node.id, { x: node.x ?? 0, y: node.y ?? 0 });
-	}
-	return positions;
+/** Read the settled coordinates back out, keyed by node id. */
+function positionsOf(nodes: SimNode[]): Map<string, Point> {
+	return new Map(nodes.map((node) => [node.id, { x: node.x ?? 0, y: node.y ?? 0 }]));
 }
 
 /**

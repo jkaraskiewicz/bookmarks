@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildGraph, collectionId, tagId, bookmarkId } from './index';
-import { bookmark, library, ids } from './fixtures';
+import { bookmark, library, nodeIds } from './fixtures';
 
 describe('buildGraph — overview (nothing expanded)', () => {
 	const graph = buildGraph(library);
@@ -10,9 +10,9 @@ describe('buildGraph — overview (nothing expanded)', () => {
 	});
 
 	it('creates a hub per collection, plus the ancestors they hang from', () => {
-		expect(ids(graph)).toContain(collectionId('Dev'));
-		expect(ids(graph)).toContain(collectionId('Dev/Frameworks'));
-		expect(ids(graph)).toContain(collectionId('Dev/Tools'));
+		expect(nodeIds(graph)).toContain(collectionId('Dev'));
+		expect(nodeIds(graph)).toContain(collectionId('Dev/Frameworks'));
+		expect(nodeIds(graph)).toContain(collectionId('Dev/Tools'));
 	});
 
 	it('labels a nested hub with its own segment, not the whole path', () => {
@@ -36,19 +36,19 @@ describe('buildGraph — overview (nothing expanded)', () => {
 
 	it('groups bookmarks with no collection under one hub once there are enough', () => {
 		// A single unfiled bookmark is below the threshold, so no hub for it.
-		expect(ids(graph)).not.toContain(collectionId('Unfiled'));
+		expect(nodeIds(graph)).not.toContain(collectionId('Unfiled'));
 
 		const withUnfiled = buildGraph([...library, bookmark('https://g.dev')]);
-		expect(ids(withUnfiled)).toContain(collectionId('Unfiled'));
+		expect(nodeIds(withUnfiled)).toContain(collectionId('Unfiled'));
 	});
 
 	it('drops hubs holding fewer than minShared bookmarks', () => {
-		expect(ids(graph)).not.toContain(collectionId('News')); // only 1 bookmark
-		expect(ids(buildGraph(library, { minShared: 1 }))).toContain(collectionId('News'));
+		expect(nodeIds(graph)).not.toContain(collectionId('News')); // only 1 bookmark
+		expect(nodeIds(buildGraph(library, { minShared: 1 }))).toContain(collectionId('News'));
 	});
 
 	it('creates tag hubs for shared tags', () => {
-		expect(ids(graph)).toContain(tagId('docs'));
+		expect(nodeIds(graph)).toContain(tagId('docs'));
 		expect(graph.nodes.find((node) => node.id === tagId('docs'))?.count).toBe(2);
 	});
 });
@@ -58,9 +58,9 @@ describe('buildGraph — expanding a hub', () => {
 	const graph = buildGraph(library, { expanded });
 
 	it('reveals just that hub’s bookmarks', () => {
-		expect(ids(graph)).toContain(bookmarkId('https://a.dev'));
-		expect(ids(graph)).toContain(bookmarkId('https://b.dev'));
-		expect(ids(graph)).not.toContain(bookmarkId('https://c.dev')); // lives in Dev/Tools
+		expect(nodeIds(graph)).toContain(bookmarkId('https://a.dev'));
+		expect(nodeIds(graph)).toContain(bookmarkId('https://b.dev'));
+		expect(nodeIds(graph)).not.toContain(bookmarkId('https://c.dev')); // lives in Dev/Tools
 	});
 
 	it('marks the hub as expanded so the UI can show it open', () => {
@@ -85,15 +85,15 @@ describe('buildGraph — expanding a hub', () => {
 describe('buildGraph — search', () => {
 	it('reveals matching bookmarks without expanding anything', () => {
 		const graph = buildGraph(library, { search: 'c.dev' });
-		expect(ids(graph)).toContain(bookmarkId('https://c.dev'));
-		expect(ids(graph)).not.toContain(bookmarkId('https://a.dev'));
+		expect(nodeIds(graph)).toContain(bookmarkId('https://c.dev'));
+		expect(nodeIds(graph)).not.toContain(bookmarkId('https://a.dev'));
 	});
 
 	it('matches on collection and tag as well as url', () => {
-		expect(ids(buildGraph(library, { search: 'Frameworks' }))).toContain(
+		expect(nodeIds(buildGraph(library, { search: 'Frameworks' }))).toContain(
 			bookmarkId('https://a.dev')
 		);
-		expect(ids(buildGraph(library, { search: 'docs' }))).toContain(bookmarkId('https://b.dev'));
+		expect(nodeIds(buildGraph(library, { search: 'docs' }))).toContain(bookmarkId('https://b.dev'));
 	});
 
 	it('shows no bookmarks when the query matches nothing', () => {
@@ -110,7 +110,7 @@ describe('buildGraph — edge cases', () => {
 	it('does not emit a bookmark twice when several of its hubs are open', () => {
 		const expanded = new Set([collectionId('Dev/Frameworks'), tagId('docs')]);
 		const graph = buildGraph(library, { expanded });
-		const appearances = ids(graph).filter((id) => id === bookmarkId('https://a.dev'));
+		const appearances = nodeIds(graph).filter((id) => id === bookmarkId('https://a.dev'));
 		expect(appearances).toHaveLength(1);
 	});
 });

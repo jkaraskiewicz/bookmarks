@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fieldClass } from './ui';
+	import { field } from './ui';
 
 	// Options shared by every import source, so each form posts the same field names.
 	let open = $state(false);
@@ -21,12 +21,12 @@
 					name="collectionPrefix"
 					placeholder="e.g. Imported"
 					list="collection-list"
-					class="mt-1 {fieldClass}"
+					class="mt-1 {field}"
 				/>
 			</label>
 			<label class="block text-sm">
 				<span class="text-muted">Tag everything with</span>
-				<input name="extraTags" placeholder="chrome, to-read" class="mt-1 {fieldClass}" />
+				<input name="extraTags" placeholder="chrome, to-read" class="mt-1 {field}" />
 			</label>
 		</div>
 	{/if}

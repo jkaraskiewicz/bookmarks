@@ -10,7 +10,7 @@
 	import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 	import EditDialog from '$lib/components/EditDialog.svelte';
 	import ViewToggle from '$lib/components/ViewToggle.svelte';
-	import { secondaryButton } from '$lib/components/ui';
+	import { pageHeader, pageShell, secondaryButton } from '$lib/components/ui';
 	import { hiddenSelectedCount, pruneSelection, toggleAll, toggleOne } from '$lib/selection';
 	import ThemePicker from '$lib/theme/ThemePicker.svelte';
 
@@ -77,8 +77,8 @@
 	{#each collectionPaths as path (path)}<option value={path}></option>{/each}
 </datalist>
 
-<div class="min-h-screen bg-canvas text-content">
-	<header class="border-b border-subtle bg-surface px-6 py-4">
+<div class="min-h-screen {pageShell}">
+	<header class={pageHeader}>
 		<div class="mx-auto flex max-w-5xl items-start gap-4">
 			<div class="min-w-0 flex-1"><AddBar /></div>
 			<ViewToggle />

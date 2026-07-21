@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { Bookmark } from '$lib/types';
-	import { fieldClass, ghostButton, primaryButton } from './ui';
+	import { field, ghostButton, primaryButton } from './ui';
 
 	let { bookmark, onclose }: { bookmark: Bookmark; onclose: () => void } = $props();
 </script>
@@ -32,15 +32,15 @@
 
 		<label class="block text-sm">
 			<span class="text-muted">Title</span>
-			<input name="title" value={bookmark.title} class="mt-1 {fieldClass}" />
+			<input name="title" value={bookmark.title} class="mt-1 {field}" />
 		</label>
 		<label class="block text-sm">
 			<span class="text-muted">URL</span>
-			<input name="url" value={bookmark.url} class="mt-1 {fieldClass}" />
+			<input name="url" value={bookmark.url} class="mt-1 {field}" />
 		</label>
 		<label class="block text-sm">
 			<span class="text-muted">Tags (comma separated)</span>
-			<input name="tags" value={bookmark.tags.join(', ')} class="mt-1 {fieldClass}" />
+			<input name="tags" value={bookmark.tags.join(', ')} class="mt-1 {field}" />
 		</label>
 		<label class="block text-sm">
 			<span class="text-muted">Collection</span>
@@ -48,12 +48,12 @@
 				name="collection"
 				value={bookmark.collection ?? ''}
 				list="collection-list"
-				class="mt-1 {fieldClass}"
+				class="mt-1 {field}"
 			/>
 		</label>
 		<label class="block text-sm">
 			<span class="text-muted">Notes</span>
-			<textarea name="notes" rows="3" class="mt-1 {fieldClass}">{bookmark.notes ?? ''}</textarea>
+			<textarea name="notes" rows="3" class="mt-1 {field}">{bookmark.notes ?? ''}</textarea>
 		</label>
 
 		{#if bookmark.description}

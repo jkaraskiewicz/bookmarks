@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { TreeNode } from '$lib/collections';
-	import { fieldClass } from './ui';
+	import { field } from './ui';
 	import CollectionTree from './CollectionTree.svelte';
 	import TagFilter from './TagFilter.svelte';
 
@@ -24,7 +24,7 @@
 </script>
 
 <aside class="w-56 shrink-0 space-y-5">
-	<input bind:value={search} type="search" placeholder="Search…" class={fieldClass} />
+	<input bind:value={search} type="search" placeholder="Search…" class={field} />
 
 	{#if collectionTree.length}
 		<div>
