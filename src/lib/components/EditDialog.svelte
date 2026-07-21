@@ -6,10 +6,16 @@
 	let { bookmark, onclose }: { bookmark: Bookmark; onclose: () => void } = $props();
 </script>
 
+<!--
+	The backdrop deliberately does not close the dialog. A stray click beside it
+	used to discard whatever had been typed, with no warning and no way back —
+	closing is worth a deliberate press of Cancel.
+-->
 <div
 	class="fixed inset-0 z-10 flex items-center justify-center bg-overlay p-4"
-	onclick={(e) => e.target === e.currentTarget && onclose()}
-	role="presentation"
+	role="dialog"
+	aria-modal="true"
+	aria-labelledby="edit-dialog-title"
 >
 	<form
 		method="POST"
@@ -21,7 +27,7 @@
 			}}
 		class="w-full max-w-md space-y-3 rounded-lg border border-line bg-canvas p-5 text-content"
 	>
-		<h2 class="text-base font-semibold">Edit bookmark</h2>
+		<h2 id="edit-dialog-title" class="text-base font-semibold">Edit bookmark</h2>
 		<input type="hidden" name="originalUrl" value={bookmark.url} />
 
 		<label class="block text-sm">
