@@ -16,7 +16,8 @@ See [`docs/design-spec.md`](docs/design-spec.md) for the full design and require
   such as `Dev/Frameworks`.
 - Search and filter across the whole library.
 - Select several bookmarks at once to delete them or re-fetch their metadata.
-- Automatic lookup of a page's title, description and icon when a link is added.
+- Automatic lookup of a page's title, description and icon when a link is added, with
+  the icon settable by hand when the lookup cannot find a good one.
 - A map view that arranges bookmarks into clusters based on the tags and collections
   they have in common.
 - Import from Chrome and other browsers, and export back out again.
@@ -97,6 +98,24 @@ bookmarks were originally saved are preserved. Bookmarks you already have are no
 a second time; see [Duplicate detection](#duplicate-detection) below.
 
 The **/export** page produces a bookmarks file that can be loaded into any browser.
+
+## Editing a bookmark
+
+Most fields are yours to change directly. Two are worth explaining.
+
+**The description is fetched, not typed.** It comes from the page itself and is shown
+read-only. The **Copy to notes** button beside it puts that text into your notes,
+where you can edit it — the copy is added below anything already there, and pressing
+the button again does nothing rather than duplicating the text.
+
+**The icon can be set by hand.** The address is an ordinary field with a preview
+beside it, so you can tell at a glance whether it loads. This matters for pages the
+fetcher cannot read — anything behind a login, for instance — where the only icon it
+can offer is a guess at `/favicon.ico` that may not exist.
+
+An icon you set is never overwritten by a later refresh, including a bulk one. The
+fetcher only fills an icon that is missing, or replaces one it guessed itself. To hand
+the choice back to it, clear the field and refresh.
 
 ## Duplicate detection
 

@@ -26,7 +26,8 @@ function readFields(form: FormData): NewBookmark {
 		title: textField(form, 'title'),
 		tags: splitList(textField(form, 'tags')),
 		collection: textField(form, 'collection'),
-		notes: textField(form, 'notes')
+		notes: textField(form, 'notes'),
+		favicon: textField(form, 'favicon')
 	};
 }
 

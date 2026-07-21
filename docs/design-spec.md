@@ -111,7 +111,7 @@ added = 2026-07-18T10:31:00
 | `collection`  | string       | no       | user            | Zero-or-one. `/`-separated allows nesting (e.g. `Dev/Frameworks`). |
 | `notes`       | string       | no       | user            | Freeform personal notes.                                           |
 | `description` | string       | no       | **fetched**     | From `<meta>` / OpenGraph.                                         |
-| `favicon`     | string (URL) | no       | **fetched**     | Remote URL; browser loads it (no local caching in v1).             |
+| `favicon`     | string (URL) | no       | fetched or user | Remote URL; browser loads it (no local caching in v1).             |
 | `added`       | datetime     | auto     | app             | Set on creation; preserved if present.                             |
 
 **Design calls made (open to revisiting):**
@@ -122,6 +122,11 @@ added = 2026-07-18T10:31:00
   `Dev/Frameworks`). The UI renders these as a nested tree; selecting a parent node
   includes all descendants (prefix match). Tags remain the many-to-many mechanism.
 - **`favicon` stored as a remote URL**, not downloaded — keeps storage plain-text and small.
+- **A favicon set by hand is never overwritten by fetching.** The fetcher fills one
+  that is missing, or replaces one it guessed itself (`conventionalFavicon`), and
+  leaves anything else alone. Without that, a bulk refresh would undo the override on
+  exactly the pages it exists for: a site the fetcher cannot read is the site whose
+  guessed `/favicon.ico` is wrong. Clearing the field hands the choice back.
 
 ### 6a. Duplicate detection — DECIDED
 

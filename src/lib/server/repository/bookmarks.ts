@@ -82,7 +82,10 @@ export function updateBookmark(originalUrl: string, changes: NewBookmark): Promi
 			title: fields.title ?? current.title,
 			tags: fields.tags ?? current.tags,
 			collection: fields.collection,
-			notes: fields.notes
+			notes: fields.notes,
+			// Emptying the field clears the icon, which is also how you ask the fetcher
+			// to have another go: it fills a bookmark that has none.
+			favicon: fields.favicon
 		};
 		const next = [...list];
 		next[idx] = updated;

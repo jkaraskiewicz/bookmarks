@@ -15,7 +15,7 @@ export interface Bookmark {
 	notes?: string;
 	/** Auto-fetched page description (meta / OpenGraph). */
 	description?: string;
-	/** Auto-fetched favicon URL. */
+	/** Favicon URL — auto-fetched, or set by hand when the fetch cannot find one. */
 	favicon?: string;
 	/** ISO-8601 timestamp of when the bookmark was added. */
 	added: string;
@@ -28,6 +28,8 @@ export interface NewBookmark {
 	tags?: string[];
 	collection?: string;
 	notes?: string;
+	/** Only the edit form supplies this; adding and importing leave it to the fetcher. */
+	favicon?: string;
 }
 
 /** Metadata discovered by fetching the page. */

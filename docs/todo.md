@@ -44,11 +44,14 @@ Detection is in place (see spec §6a). Deferred pieces:
 
 - [ ] Auto-fetch failures are silent — no "couldn't fetch" indicator (spec §7 says there
       should be one). Now more visible: a bookmark behind a login keeps the URL as its
-      title with no explanation of why.
+      title with no explanation of why. The icon half of this is covered — you can set
+      one by hand — but the title and description are not.
 - [ ] **Metadata for pages behind a login.** The server fetches anonymously, so a
       private Google Doc answers 401 and only its favicon can be recovered. Fixing it
       properly means capturing title and description from the tab you are already
       logged into — a bookmarklet or small extension that posts them to the local
       server. Would work for every authenticated site, not just Google.
-- [ ] `description` is read-only; no way to override or clear an auto-fetched one.
+- [ ] `description` is still read-only. It can now be copied into notes and edited
+      there, which covers most of why you would want to change it, but there is no way
+      to correct or clear the description itself.
 - [ ] Collection tree nodes aren't collapsible.

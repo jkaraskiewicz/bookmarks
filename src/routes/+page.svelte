@@ -117,5 +117,8 @@
 </div>
 
 {#if editing}
-	<EditDialog bookmark={editing} onclose={() => (editing = null)} />
+	<!-- Keyed so each bookmark gets a fresh dialog, not the last one's field values. -->
+	{#key editing.url}
+		<EditDialog bookmark={editing} onclose={() => (editing = null)} />
+	{/key}
 {/if}

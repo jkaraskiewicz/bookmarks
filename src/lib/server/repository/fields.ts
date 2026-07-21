@@ -13,7 +13,8 @@ export function trimFields(input: NewBookmark) {
 		title: input.title?.trim() || undefined,
 		tags: input.tags?.map((tag) => tag.trim()).filter(Boolean),
 		collection: input.collection?.trim() || undefined,
-		notes: input.notes?.trim() || undefined
+		notes: input.notes?.trim() || undefined,
+		favicon: input.favicon?.trim() || undefined
 	};
 }
 
